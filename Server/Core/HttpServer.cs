@@ -175,10 +175,11 @@ namespace Batzill.Server.Core
 
                 this.ProcessRequest(operationId, context);
 
-                this.logger.Log(EventType.SystemInformation, "Do a final sync of properties and stream flush.");
+                this.logger.Log(EventType.SystemInformation, "Do a final header sync, stream flush and a close.");
 
                 context.SyncResponse();
                 context.FlushResponse();
+                context.CloseResponse();
                 
                 this.logger.Log(EventType.SystemInformation, "Operation '{0}' finished successful.", operationId);
             });

@@ -13,7 +13,7 @@ namespace Batzill.Server.Core.Operations
 {
     public class WaitOperation : Operation
     {
-        private const string regex = "^/wait([0-9]*)$";
+        private const string InputRegex = "^/wait/?([0-9]*)$";
 
         public override int Priority
         {
@@ -41,7 +41,7 @@ namespace Batzill.Server.Core.Operations
 
             this.logger.Log(EventType.OperationInformation, "Got request to wait, try parsing seconds passed by client.");
 
-            Match result = Regex.Match(context.Request.RawUrl, WaitOperation.regex, RegexOptions.IgnoreCase);
+            Match result = System.Text.RegularExpressions.Regex.Match(context.Request.RawUrl, WaitOperation.InputRegex, RegexOptions.IgnoreCase);
             if (result.Success && result.Groups.Count == 2 && !string.IsNullOrEmpty(result.Groups[1].Value))
             {
                 if (Int32.TryParse(result.Groups[1].Value, out int waitInSec))
@@ -65,7 +65,7 @@ namespace Batzill.Server.Core.Operations
             {
                 this.logger.Log(EventType.OperationInformation, "No number passed, return info page.");
 
-                context.Response.WriteContent(string.Format("Call '/wait[number]' to have to server wait [number] seconds before replying.", result.Groups[1].Value));
+                context.Response.WriteContent("Call '/wait/[number]' to have to server wait [number] seconds before replying.");
             }
 
             return;
@@ -73,7 +73,7 @@ namespace Batzill.Server.Core.Operations
 
         public override bool Match(HttpContext context)
         {
-            return Regex.IsMatch(context.Request.RawUrl, WaitOperation.regex, RegexOptions.IgnoreCase);
+            return System.Text.RegularExpressions.Regex.IsMatch(context.Request.RawUrl, WaitOperation.InputRegex, RegexOptions.IgnoreCase);
         }
     }
 }

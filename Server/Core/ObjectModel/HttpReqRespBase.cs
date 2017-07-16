@@ -130,7 +130,6 @@ namespace Batzill.Server.Core.ObjectModel
             this.ContentEncoding = Encoding.UTF8;
             this.ContentLength = 0;
             this.ContentType = "text/html";
-            this.ProtocolVersion = new Version(1, 1);
         }
 
         public string GetHeaderValue(string header, string def = null)

@@ -34,7 +34,10 @@ namespace Batzill.Server.Core.ObjectModel
 
         public abstract void SyncResponse();
         public abstract void FlushResponse();
+        public abstract void CloseResponse();
+
         public abstract void SyncRequest();
         public abstract void FlushRequest();
+        public abstract void CloseRequest();
     }
 }

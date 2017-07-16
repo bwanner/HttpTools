@@ -18,20 +18,31 @@ namespace Batzill.Server.Implementations.HttpClient
             this.internalResponse = response;
         }
 
-        private static HttpRequest ConvertRequest(HttpListenerRequest request)
+        public override void SyncResponse()
         {
-            return new HttpRequest(request.ProtocolVersion)
+            if (this.Response.ContentLength.HasValue && this.internalResponse.SendChunked)
             {
-                Cookies = request.Cookies,
-                HasEntityBody = request.HasEntityBody,
-                Headers = request.Headers,
-                HttpMethod = request.HttpMethod,
-                Stream = request.InputStream,
-                IsSecureConnection = request.IsSecureConnection,
-                LocalEndpoint = request.LocalEndPoint,
-                RemoteEndpoint = request.RemoteEndPoint,
-                Url = request.Url
-            };
+                this.internalResponse.ContentEncoding = this.Response.ContentEncoding;
+                this.internalResponse.ContentType = this.Response.ContentType;
+            }
+
+            if (this.Response.ContentLength.HasValue)
+            {
+                this.internalResponse.ContentLength64 = this.Response.ContentLength.Value;
+            }
+
+            this.internalResponse.SendChunked = this.Response.SendChuncked;
+            this.internalResponse.Cookies = this.Response.Cookies;
+
+            this.internalResponse.Headers.Clear();
+            this.internalResponse.Headers.Add(this.Response.Headers);
+
+            this.internalResponse.KeepAlive = this.Response.KeepAlive;
+
+            this.internalResponse.ProtocolVersion = this.Response.ProtocolVersion;
+            this.internalResponse.RedirectLocation = this.Response.RedirectLocation;
+            this.internalResponse.StatusCode = this.Response.StatusCode;
+            this.internalResponse.StatusDescription = this.Response.StatusDescription;
         }
 
         public override void FlushResponse()
@@ -46,43 +57,40 @@ namespace Batzill.Server.Implementations.HttpClient
             this.internalResponse.OutputStream.Flush();
         }
 
-        public override void SyncResponse()
+        public override void CloseResponse()
         {
-            this.internalResponse.ContentEncoding = this.Response.ContentEncoding;
-
-            if (this.Response.ContentLength.HasValue)
-            {
-                this.internalResponse.ContentLength64 = this.Response.ContentLength.Value;
-            }
-
-            this.internalResponse.SendChunked = this.Response.SendChuncked;
-            this.internalResponse.ContentType = this.Response.ContentType;
-            this.internalResponse.Cookies = this.Response.Cookies;
-
-            this.internalResponse.Headers.Clear();
-            this.internalResponse.Headers.Add(this.Response.Headers);
-
-            if (this.Response.KeepAlive)
-            {
-                this.internalResponse.KeepAlive = this.Response.KeepAlive;
-            }
-
-            this.internalResponse.ProtocolVersion = this.Response.ProtocolVersion;
-            this.internalResponse.RedirectLocation = this.Response.RedirectLocation;
-            this.internalResponse.StatusCode = this.Response.StatusCode;
-            this.internalResponse.StatusDescription = this.Response.StatusDescription;
+            this.internalResponse.Close();
         }
-
-
+        
+        public override void SyncRequest()
+        {
+            return;
+        }
 
         public override void FlushRequest()
         {
             return;
         }
 
-        public override void SyncRequest()
+        public override void CloseRequest()
         {
             return;
+        }
+
+        private static HttpRequest ConvertRequest(HttpListenerRequest request)
+        {
+            return new HttpRequest(request.ProtocolVersion)
+            {
+                Cookies = request.Cookies,
+                HasEntityBody = request.HasEntityBody,
+                Headers = request.Headers,
+                HttpMethod = request.HttpMethod,
+                Stream = request.InputStream,
+                IsSecureConnection = request.IsSecureConnection,
+                LocalEndpoint = request.LocalEndPoint,
+                RemoteEndpoint = request.RemoteEndPoint,
+                Url = request.Url
+            };
         }
     }
 }
