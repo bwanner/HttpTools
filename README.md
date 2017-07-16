@@ -1,2 +1,2 @@
-# HttpServer
-A easy to use and highly adjustable HTTP Server
+# HttpTools
+Easy to use and highly adjustable HTTP Server and Client
