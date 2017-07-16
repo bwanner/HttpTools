@@ -4,10 +4,14 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace HttpServer.Core.IO
+namespace Batzill.Server.Core.IO
 {
-    public interface IFileWriter
+    public interface IFileWriter : IDisposable
     {
-        void Write(string value);
+        IDisposable Open(string file, bool lockFile = false);
+        void Close();
+
+        void Write(string text);
+        void WriteLine(string text);
     }
 }

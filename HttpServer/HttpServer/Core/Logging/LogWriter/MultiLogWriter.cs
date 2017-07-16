@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace HttpServer.Core.Logging
+namespace Batzill.Server.Core.Logging
 {
     public class MultiLogWriter : ILogWriter
     {
@@ -25,7 +25,7 @@ namespace HttpServer.Core.Logging
             this.logWriters.Add(logWriter);
         }
 
-        public void WriteLog(LogEntry log)
+        public void WriteLog(Log log)
         {
             foreach (ILogWriter logWriter in this.logWriters)
             {

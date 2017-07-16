@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace HttpServer.Core.Logging
+namespace Batzill.Server.Core.Logging
 {
     /// <summary>
     /// Contains the list of different EventTypes for logging
@@ -38,6 +38,7 @@ namespace HttpServer.Core.Logging
         SystemInformation = 0x1100000,
         SystemSettings = 0x1100001,
         ServerSetup = 0x1100002,
+        OperationLoading = 0x1100003,
 
         // Class for up to 0x12fffff
         SytemWarning = 0x1200000,
@@ -45,6 +46,7 @@ namespace HttpServer.Core.Logging
         // Class for up to 0x13fffff
         SystemError = 0x1300000,
         SettingsParsingError = 0x1300001,
+        OperationLoadingError = 0x1300002,
 
         #endregion
 

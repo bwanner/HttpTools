@@ -6,8 +6,8 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{4FC1221C-5E3E-48BE-8E54-9D4DE2C7A207}</ProjectGuid>
     <OutputType>Exe</OutputType>
-    <RootNamespace>HttpServer</RootNamespace>
-    <AssemblyName>HttpServer</AssemblyName>
+    <RootNamespace>Batzill.Server</RootNamespace>
+    <AssemblyName>Batzill.Server</AssemblyName>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
@@ -59,29 +59,45 @@
   <ItemGroup>
     <Compile Include="Core\IO\IFileReader.cs" />
     <Compile Include="Core\IO\IFileWriter.cs" />
-    <Compile Include="Core\IO\SytemFileReader.cs" />
-    <Compile Include="Core\Logging\BasicLogger.cs" />
+    <Compile Include="Core\IO\SystemFileWriter.cs" />
+    <Compile Include="Core\IO\SystemFileReader.cs" />
+    <Compile Include="Core\Logging\Logger\BasicLogger.cs" />
+    <Compile Include="Core\Logging\Logger\FrontendOperationLogger.cs" />
+    <Compile Include="Core\Logging\LogOperations\FrontendOperationLog.cs" />
     <Compile Include="Core\Logging\LogWriter\AsyncLogWriter.cs" />
     <Compile Include="Core\Logging\LogWriter\ConsoleLogWriter.cs" />
     <Compile Include="Core\Logging\EventType.cs" />
     <Compile Include="Core\Logging\Logger.cs" />
-    <Compile Include="Core\Logging\LogWriter\LogOperation.cs" />
-    <Compile Include="Core\Logging\LogWriter\LogWriter.cs" />
+    <Compile Include="Core\Logging\Log.cs" />
+    <Compile Include="Core\Logging\LogWriter.cs" />
+    <Compile Include="Core\Logging\LogWriter\FileLogWriter.cs" />
+    <Compile Include="Core\Logging\LogWriter\FrontendOperationLogWriter.cs" />
     <Compile Include="Core\Logging\LogWriter\MultiLogWriter.cs" />
+    <Compile Include="Core\ObjectModel\HttpContext.cs" />
+    <Compile Include="Core\ObjectModel\HttpReqRespBase.cs" />
     <Compile Include="Core\ObjectModel\HttpRequest.cs" />
     <Compile Include="Core\ObjectModel\HttpResponse.cs" />
+    <Compile Include="Core\Operations\CustomOperations\DumpLogsOperation.cs" />
+    <Compile Include="Core\Operations\CustomOperations\WaitOperation.cs" />
+    <Compile Include="Core\Operations\CustomOperations\EchoOperation.cs" />
+    <Compile Include="Core\Operations\IOperationFactory.cs" />
+    <Compile Include="Core\Operations\Operation.cs" />
+    <Compile Include="Core\Operations\AssemblyOperationFactory.cs" />
+    <Compile Include="Core\Operations\OperationPriorityComparer.cs" />
+    <Compile Include="Core\Settings\HttpServerSettingDefaults.cs" />
     <Compile Include="Core\Settings\HttpServerSettings.cs" />
-    <Compile Include="Core\HttpServerCore.cs" />
-    <Compile Include="Core\HttpClientServer.cs" />
+    <Compile Include="Core\HttpServer.cs" />
+    <Compile Include="Implementations\HttpClient\HttpClientContext.cs" />
+    <Compile Include="Implementations\HttpClient\HttpClientServer.cs" />
     <Compile Include="Core\ServiceConstants.cs" />
-    <Compile Include="Core\Settings\HttpServerSettingConstants.cs" />
+    <Compile Include="Core\Settings\HttpServerSettingNames.cs" />
     <Compile Include="Core\Settings\HttpServerSettingsProvider.cs" />
     <Compile Include="HttpServerRole.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
-    <None Include="httpserver.config">
+    <None Include="default.cfg">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>

@@ -1,18 +1,19 @@
-﻿using HttpServer.Core;
-using HttpServer.Core.IO;
-using HttpServer.Core.Logging;
-using HttpServer.Core.Settings;
+﻿using Batzill.Server.Core;
+using Batzill.Server.Core.IO;
+using Batzill.Server.Core.Logging;
+using Batzill.Server.Core.Settings;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.IO;
 
-namespace HttpServer
+namespace Batzill.Server
 {
     class HttpServerRole
     {
-        private const string DefaultSettingsFilePath = "httpserver.config";
+        private const string DefaultSettingsFilePath = "default.cfg";
 
         private static HttpServerSettingsProvider settingsProvider;
         private static Logger logger;
@@ -22,6 +23,7 @@ namespace HttpServer
             HttpServerRole.SetupBasicLogging();
             HttpServerRole.Initialize(args);
 
+
             Console.ReadLine();
         }
 
@@ -30,15 +32,30 @@ namespace HttpServer
             HttpServerRole.logger = new BasicLogger(new ConsoleLogWriter());
         }
 
+        private static void SetupLogging()
+        {
+            List<ILogWriter> logWriter = new List<ILogWriter>();
+            logWriter.Add(new ConsoleLogWriter());
+            logWriter.Add(new FrontendOperationLogWriter(new SystemFileWriter(), HttpServerRole.settingsProvider.Settings));
+            logWriter.Add(new FileLogWriter(new SystemFileWriter(), HttpServerRole.settingsProvider.Settings));
+
+            HttpServerRole.logger = new BasicLogger(new MultiLogWriter(logWriter));
+        }
+
         private static void Initialize(string[] args)
         {
             // get args first
-            string settingsFile = args == null || args.Length == 0 ? HttpServerRole.DefaultSettingsFilePath : args[0];
+            string settingsFile = args == null || args.Length == 0 ? Path.Combine(AppDomain.CurrentDomain.BaseDirectory, HttpServerRole.DefaultSettingsFilePath) : args[0];
 
-            HttpServerRole.settingsProvider = new HttpServerSettingsProvider(logger, new SytemFileReader(), settingsFile);
+            // get setting!
+            HttpServerRole.settingsProvider = new HttpServerSettingsProvider(logger, new SystemFileReader(), settingsFile);
 
-            HttpServerCore httpServer = new HttpClientServer(HttpServerRole.logger);
-            httpServer.ApplySettings(HttpServerRole.settingsProvider.Settings);
+            // setup regular logging
+            HttpServerRole.SetupLogging();
+
+            HttpServer httpServer = new HttpClientServer(HttpServerRole.logger, HttpServerRole.settingsProvider.Settings, new AssemblyOperationFactory(HttpServerRole.logger), new TaskFactory());
+
+            httpServer.Start();
         }
     }
 }

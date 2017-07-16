@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace HttpServer.Core.Logging
+namespace Batzill.Server.Core.Logging
 {
     public class AsyncLogWriter : ILogWriter
     {
@@ -15,7 +15,7 @@ namespace HttpServer.Core.Logging
             this.logWriter = logWriter;
         }
 
-        public void WriteLog(LogEntry log)
+        public void WriteLog(Log log)
         {
             lock (this.logWriter)
             {

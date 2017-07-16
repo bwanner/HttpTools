@@ -1,13 +1,41 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace HttpServer.Core.Settings
+namespace Batzill.Server.Core.Settings
 {
     public class HttpServerSettings
     {
+        private static Dictionary<string, string> defaultValues;
+        private static Dictionary<string, string> DefaultValues
+        {
+            get
+            {
+                if (defaultValues == null)
+                {
+                    HttpServerSettings.LoadDefaultValues();
+                }
+
+                return HttpServerSettings.defaultValues;
+            }
+            set
+            {
+                HttpServerSettings.defaultValues = value;
+            }
+        }
+        private static void LoadDefaultValues()
+        {
+            HttpServerSettings.defaultValues = new Dictionary<string, string>();
+            foreach (FieldInfo fInfo in typeof(HttpServerSettingDefaults).GetFields())
+            {
+                HttpServerSettings.defaultValues.Add(fInfo.Name.ToLowerInvariant(), (string)fInfo.GetValue(null));
+            }
+        }
+
         private readonly Dictionary<string, string> settings;
         
         public string this[string name]
@@ -22,8 +50,11 @@ namespace HttpServer.Core.Settings
             }
         }
 
-        public HttpServerSettings()
+        public readonly HttpServerSettingsProvider Provider;
+
+        public HttpServerSettings(HttpServerSettingsProvider provider)
         {
+            this.Provider = provider;
             this.settings = new Dictionary<string, string>();
         }
 
@@ -31,7 +62,7 @@ namespace HttpServer.Core.Settings
         {
             name = this.PrepareName(name);
 
-            if (!this.Contains(name))
+            if (!this.Contains(name, false))
             {
                 this.settings.Add(name, value);
             }
@@ -41,28 +72,59 @@ namespace HttpServer.Core.Settings
             }
         }
 
-        public string Get(string name)
+        public string Get(string name, bool checkDefault = true)
         {
             name = this.PrepareName(name);
 
-            if (!this.Contains(name))
+            if (this.settings.ContainsKey(name))
             {
-                return null;
+                return this.settings[name];
+            }
+            else if (checkDefault)
+            {
+                return this.Default(name);
             }
 
-            return this.settings[name];
+            return null;
         }
 
-        public bool Contains(string name)
+        public string Default(string name)
+        {
+            name = this.PrepareDefaultName(name);
+
+            if (HttpServerSettings.DefaultValues.ContainsKey(name))
+            {
+                return HttpServerSettings.DefaultValues[name];
+            }
+
+            return "";
+        }
+
+        public bool Contains(string name, bool checkDefault = true)
         {
             name = this.PrepareName(name);
 
-            return this.settings.ContainsKey(name);
+            if (this.settings.ContainsKey(name))
+            {
+                return true;
+            }
+            else if (checkDefault)
+            {
+                return this.ContainsDefault(name);
+            }
+
+            return false;
+        }
+
+        private bool ContainsDefault(string name)
+        {
+            name = this.PrepareDefaultName(name);
+            return HttpServerSettings.DefaultValues.ContainsKey(name);
         }
 
         public HttpServerSettings Clone()
         {
-            HttpServerSettings result = new HttpServerSettings();
+            HttpServerSettings result = new HttpServerSettings(this.Provider);
             foreach (KeyValuePair<string, string> entry in this.settings)
             {
                 result.Set(entry.Key.ToString(), entry.Value.ToString());
@@ -79,6 +141,11 @@ namespace HttpServer.Core.Settings
             }
 
             return string.Empty;
+        }
+
+        private string PrepareDefaultName(string name)
+        {
+            return string.Format("default{0}", this.PrepareName(name));
         }
     }
 }

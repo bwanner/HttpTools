@@ -1,5 +1,5 @@
-﻿using HttpServer.Core.IO;
-using HttpServer.Core.Logging;
+﻿using Batzill.Server.Core.IO;
+using Batzill.Server.Core.Logging;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -7,15 +7,16 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using System.Threading;
 
-namespace HttpServer.Core.Settings
+namespace Batzill.Server.Core.Settings
 {
     public class HttpServerSettingsProvider : IDisposable
     {
         // regex expressions
         public const string RegexSettingsEntry = @"^([a-zA-Z0-9\-\.]+) (.+)$";
 
-        public EventHandler<HttpServerSettings> SettingsChanged;
+        public event EventHandler<HttpServerSettings> SettingsChanged;
 
         private HttpServerSettings settings;
         public HttpServerSettings Settings
@@ -28,6 +29,7 @@ namespace HttpServer.Core.Settings
 
         private Logger logger;
         private IFileReader fileReader;
+        private FileSystemWatcher fileMonitor;
         private bool monitorSettingsFile;
 
         private readonly string settingsFile;
@@ -58,68 +60,101 @@ namespace HttpServer.Core.Settings
 
         public void LoadSettings()
         {
-            try
+            lock (this)
             {
-                using (this.fileReader.Open(this.settingsFile))
+                try
                 {
-                    int lineNumber = 1;
-                    bool successful = true;
-                    HttpServerSettings settings = new HttpServerSettings();
+                    this.logger.Log(EventType.SystemSettings, "Load Settings from settings file.");
 
-                    foreach (string line in this.fileReader.ReadLineByLine())
+                    using (this.fileReader.Open(this.settingsFile))
                     {
-                        Match match = Regex.Match(line.TrimEnd(), HttpServerSettingsProvider.RegexSettingsEntry, RegexOptions.IgnoreCase);
+                        int lineNumber = 1;
+                        bool successful = true;
+                        HttpServerSettings settings = new HttpServerSettings(this);
 
-                        if (match.Success && match.Groups.Count == 3)
+                        foreach (string line in this.fileReader.ReadLineByLine())
                         {
-                            string name = match.Groups[1].Value;
-                            string value = match.Groups[2].Value;
+                            Match match = Regex.Match(line.TrimEnd(), HttpServerSettingsProvider.RegexSettingsEntry, RegexOptions.IgnoreCase);
 
-                            this.logger.Log(EventType.SystemSettings, "Found Setting '{0}'. Value: '{1}'", name, value);
+                            if (match.Success && match.Groups.Count == 3)
+                            {
+                                string name = match.Groups[1].Value;
+                                string value = match.Groups[2].Value;
 
-                            settings.Set(name, value);
+                                this.logger.Log(EventType.SystemSettings, "Found Setting '{0}'. Value: '{1}'", name, value);
+
+                                settings.Set(name, value);
+                            }
+                            else
+                            {
+                                this.logger.Log(EventType.SettingsParsingError, "Unable to parse line {0} in settingsfile '{1}'.", lineNumber, this.settingsFile);
+                                successful = false;
+                                break;
+                            }
+
+                            lineNumber++;
                         }
-                        else
+
+                        if (successful)
                         {
-                            this.logger.Log(EventType.SettingsParsingError, "Unable to parse line {0} in settingsfile '{1}'.", lineNumber, this.settingsFile);
-                            successful = false;
-                            break;
+                            this.ApplyNewSettings(settings);
                         }
 
-                        lineNumber++;
                     }
-
-                    if (successful)
-                    {
-                        this.ApplyNewSettings(settings);
-                    }
-
                 }
-            }
-            catch(Exception ex)
-            {
-                this.logger.Log(EventType.SystemError, "Unable to load settings from file '{0}': {1}", this.settingsFile, ex.ToString());
-                throw new Exception("Unable to load settings file.");
+                catch (Exception ex)
+                {
+                    this.logger.Log(EventType.SystemError, "Unable to load settings from file '{0}': {1}", this.settingsFile, ex.ToString());
+                    throw new Exception("Unable to load settings file.");
+                }
             }
         }
 
         public void ApplyNewSettings(HttpServerSettings settings)
         {
-            this.logger.Log(EventType.SystemSettings, "Applying new settings.");
-
-            this.settings = settings;
-
-            if (this.settings.Contains(HttpServerSettingConstants.MonitorSettingsFileChange))
+            lock (this)
             {
-                this.monitorSettingsFile = string.Equals("true", this.settings.Get(HttpServerSettingConstants.MonitorSettingsFileChange), StringComparison.InvariantCultureIgnoreCase);
-            }
+                this.logger.Log(EventType.SystemSettings, "Apply new settings.");
 
-            if (this.SettingsChanged != null)
+                this.settings = settings;
+
+                this.monitorSettingsFile = string.Equals("true", this.settings.Get(HttpServerSettingNames.MonitorSettingsFileChange), StringComparison.InvariantCultureIgnoreCase);
+                if (this.monitorSettingsFile)
+                {
+                    this.fileMonitor = new FileSystemWatcher(Path.GetDirectoryName(this.settingsFile));
+                    this.fileMonitor.Filter = Path.GetFileName(this.settingsFile);
+                    this.fileMonitor.NotifyFilter = NotifyFilters.LastWrite;
+                    this.fileMonitor.Changed += this.FileMonitor_Changed;
+                    this.fileMonitor.EnableRaisingEvents = true;
+                }
+                else if (fileMonitor != null)
+                {
+                    this.fileMonitor.EnableRaisingEvents = false;
+                    fileMonitor.Dispose();
+                }
+
+                if (this.SettingsChanged != null)
+                {
+                    this.SettingsChanged.Invoke(this, this.settings);
+                }
+
+                this.logger.Log(EventType.SystemSettings, "Applied new settings.");
+            }
+        }
+
+        private void FileMonitor_Changed(object sender, FileSystemEventArgs e)
+        {
+            this.logger.Log(EventType.SystemSettings, "Setting file changes detected, reloading file!");
+            lock (this)
             {
-                this.SettingsChanged.Invoke(this, this.settings);
-            }
+                this.fileMonitor.EnableRaisingEvents = false;
 
-            this.logger.Log(EventType.SystemSettings, "Applied new settings.");
+                this.LoadSettings();
+
+                Thread.Sleep(300);
+
+                this.fileMonitor.EnableRaisingEvents = true;
+            }
         }
     }
 }

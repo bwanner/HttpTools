@@ -7,69 +7,42 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace HttpServer.Core.ObjectModel
+namespace Batzill.Server.Core.ObjectModel
 {
-    public class HttpResponse
+    public class HttpResponse : HttpReqRespBase
     {
-        public Encoding ContentEncoding
-        {
-            get; private set;
-        }
-
-        public long ContentLength
-        {
-            get; private set;
-        }
-
-        public string ContentType
-        {
-            get; private set;
-        }
-
-        public CookieCollection Cookies
-        {
-            get; private set;
-        }
-
-        public NameValueCollection Headers
-        {
-            get; private set;
-        }
-
-        public string KeepAlive
-        {
-            get; private set;
-        }
-
-        public StreamWriter OutputStream
-        {
-            get; private set;
-        }
-
-        public Version ProtocolVersion
-        {
-            get; private set;
-        }
-
         public string RedirectLocation
         {
-            get; private set;
+            get
+            {
+                return this.GetHeaderValue(HttpResponseHeader.Location.ToString());
+            }
+            set
+            {
+                this.SetHeaderValue(HttpResponseHeader.Location.ToString(), value);
+            }
         }
 
         public int StatusCode
         {
-            get; private set;
+            get;  set;
         }
 
         public string StatusDescription
         {
-            get; private set;
+            get;  set;
         }
 
-        public HttpResponse()
+        public HttpResponse() : base()
         {
-            this.Cookies = new CookieCollection();
-            this.Headers = new NameValueCollection();
+        }
+
+        public override void SetDefaultValues()
+        {
+            base.SetDefaultValues();
+
+            this.StatusCode = 200;
+            this.StatusDescription = "OK";
         }
 
         public void Redirect(string url)

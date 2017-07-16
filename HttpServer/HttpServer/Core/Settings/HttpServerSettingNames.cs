@@ -4,12 +4,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace HttpServer.Core.Settings
+namespace Batzill.Server.Core.Settings
 {
-    public static class HttpServerSettingConstants
+    public static class HttpServerSettingNames
     {
-        public const char ListValueSplitter = ',';
-
         public const string MonitorSettingsFileChange = "MonitorSettingsFileChange";
 
         public const string Protocol = "Protocol";
@@ -18,5 +16,9 @@ namespace HttpServer.Core.Settings
 
         public const string IdleTimeout = "IdleTimeout";
         public const string ConnectionLimit = "ConnectionLimit";
+
+        public const string LogFolder = "LogFolder";
+        public const string LogFileName = "LogFileName";
+        public const string LogFolderOperations = "LogFolderOperations";
     }
 }

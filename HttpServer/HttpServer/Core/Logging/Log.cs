@@ -4,14 +4,14 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace HttpServer.Core.Logging
+namespace Batzill.Server.Core.Logging
 {
-    public class LogEntry
+    public class Log
     {
         public string[] ExtendedData
         {
             get;
-            private set;
+            protected set;
         }
 
         public DateTime Timestamp
@@ -20,24 +20,23 @@ namespace HttpServer.Core.Logging
             private set;
         }
 
-        public EventType Type
+        public EventType EventType
         {
             get;
             private set;
         }
 
-        public string Message
-        {
-            get;
-            private set;
-        }
-
-        public LogEntry(EventType type, string message = "", params string[] extendedData)
+        protected Log()
         {
             this.Timestamp = DateTime.Now;
-            this.Type = type;
-            this.Message = message;
+        }
+
+        public Log(EventType eventType, params string[] extendedData)
+        {
+            this.EventType = eventType;
             this.ExtendedData = extendedData ?? new string[0];
+
+            this.Timestamp = DateTime.Now;
         }
     }
 }

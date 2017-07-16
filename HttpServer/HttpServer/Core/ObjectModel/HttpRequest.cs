@@ -7,114 +7,103 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace HttpServer.Core.ObjectModel
+namespace Batzill.Server.Core.ObjectModel
 {
-    public class HttpRequest
+    public class HttpRequest : HttpReqRespBase
     {
-        public Encoding ContentEncoding
-        {
-            get; private set;
-        }
-
-        public long ContentLength
-        {
-            get; private set;
-        }
-
-        public string ContentType
-        {
-            get; private set;
-        }
-
-        public CookieCollection Cookies
-        {
-            get; private set;
-        }
-
         public bool HasEntityBody
         {
-            get; private set;
-        }
-
-        public NameValueCollection Headers
-        {
-            get; private set;
-        }
-
-        public string HostAddress
-        {
-            get; private set;
-        }
-
-        public string HostName
-        {
-            get; private set;
+            get; set;
         }
 
         public string HttpMethod
         {
-            get; private set;
-        }
-
-        public Version ProtocolVersion
-        {
-            get; private set;
-        }
-
-        public StreamReader InputStream
-        {
-            get; private set;
+            get; set;
         }
 
         public bool IsSecureConnection
         {
-            get; private set;
-        }
-
-        public string KeepAlive
-        {
-            get; private set;
+            get; set;
         }
 
         public IPEndPoint LocalEndpoint
         {
-            get; private set;
+            get; set;
         }
 
         public string QueryString
         {
-            get; private set;
+            get
+            {
+                return this.Url == null ? "" : this.Url.Query;
+            }
         }
 
         public string RawUrl
         {
-            get; private set;
+            get
+            {
+                return this.Url == null ? "" : this.Url.AbsolutePath;
+            }
         }
 
         public IPEndPoint RemoteEndpoint
         {
-            get; private set;
+            get; set;
         }
 
-        public Guid RequestTraceIdentifier
+        public string RequestTraceIdentifier
         {
-            get; private set;
+            get
+            {
+                return this.GetHeaderValue("X-Request-ID");
+            }
+            set
+            {
+                this.SetHeaderValue("X-Request-ID", value);
+            }
         }
 
         public Uri Url
         {
-            get; private set;
+            get; set;
         }
 
         public string UserAgent
         {
-            get; private set;
+            get
+            {
+                return this.GetHeaderValue(HttpRequestHeader.UserAgent.ToString());
+            }
+            set
+            {
+                this.SetHeaderValue(HttpRequestHeader.UserAgent.ToString(), value);
+            }
         }
 
-        public HttpRequest()
+        public string UserHostName
         {
-            this.Cookies = new CookieCollection();
-            this.Headers = new NameValueCollection();
+            get
+            {
+                return this.GetHeaderValue(HttpRequestHeader.Host.ToString());
+            }
+            set
+            {
+                this.SetHeaderValue(HttpRequestHeader.Host.ToString(), value);
+            }
+        }
+
+        public HttpRequest() : base()
+        {
+        }
+
+        public override void SetDefaultValues()
+        {
+            base.SetDefaultValues();
+
+            HasEntityBody = false;
+            HttpMethod = "GET";
+            IsSecureConnection = false;
         }
     }
 }

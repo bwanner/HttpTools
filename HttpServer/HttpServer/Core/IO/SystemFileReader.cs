@@ -5,11 +5,19 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace HttpServer.Core.IO
+namespace Batzill.Server.Core.IO
 {
-    public class SytemFileReader : IFileReader
+    public class SystemFileReader : IFileReader
     {
         private FileStream fileStream;
+
+        public SystemFileReader(string file = "", bool lockFile = false)
+        {
+            if (!string.IsNullOrEmpty(file))
+            {
+               this.Open(file, lockFile);
+            }
+        }
 
         public IDisposable Open(string file, bool lockFile = false)
         {
@@ -24,11 +32,14 @@ namespace HttpServer.Core.IO
 
             return this.fileStream;
         }
-
+        
         public void Close()
         {
-            this.fileStream.Close();
-            this.fileStream.Dispose();
+            if (this.fileStream != null)
+            {
+                this.fileStream.Close();
+                this.fileStream.Dispose();
+            }
         }
 
         public IEnumerable<char> ReadCharByChar()
