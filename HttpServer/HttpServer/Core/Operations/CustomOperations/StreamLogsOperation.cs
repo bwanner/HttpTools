@@ -12,14 +12,14 @@ using Batzill.Server.Core.Settings;
 
 namespace Batzill.Server.Core.Operations
 {
-    public class DumpLogsOperation : Operation
+    public class StreamLogsOperation : Operation
     {
 
         public override int Priority
         {
             get
             {
-                return 1;
+                return 3;
             }
         }
 
@@ -27,34 +27,42 @@ namespace Batzill.Server.Core.Operations
         {
             get
             {
-                return "DumpLogs";
+                return "StreamLogs";
             }
         }
 
-        public DumpLogsOperation() : base()
+        public StreamLogsOperation() : base()
         {
         }
 
         public override void Execute(HttpContext context)
         {
-            context.Response.SetDefaultValues();
+            int idleTimeout = 120000;
 
-            this.logger.Log(EventType.OperationInformation, "Start dumping log file");
+            context.Response.SetDefaultValues();
+            context.Response.SendChuncked = true;
+            context.SyncResponse();
+
+            this.logger.Log(EventType.OperationInformation, "Start streaming log files");
             
             string file = Path.Combine(settings.Get(HttpServerSettingNames.LogFolder), settings.Get(HttpServerSettingNames.LogFileName));
             using (SystemFileReader reader = new SystemFileReader(file))
             {
-                context.Response.WriteContent(reader.ReadEntireFile());
+                foreach (string line in reader.StreamLineByLine(true, idleTimeout, 500))
+                {
+                    context.Response.WriteContent(string.Format("{0}\r\n", line));
+                    context.FlushResponse();
+                }
             }
             
-            this.logger.Log(EventType.OperationInformation, "Finished dumping logs, dumped {0:0.###}KB", (context.Response.ContentLength / ((double)1024)));
+            this.logger.Log(EventType.OperationInformation, "No file changes for {0}ms, stopping the log stream.", idleTimeout);
 
             return;
         }
 
         public override bool Match(HttpContext context)
         {
-            return Regex.IsMatch(context.Request.RawUrl, "^/logs/?$", RegexOptions.IgnoreCase);
+            return Regex.IsMatch(context.Request.RawUrl, "^/stream/logs/?$", RegexOptions.IgnoreCase);
         }
     }
 }

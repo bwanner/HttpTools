@@ -34,6 +34,7 @@ namespace Batzill.Server.Core.ObjectModel
             set
             {
                 this.SetHeaderValue(HttpRequestHeader.ContentLength.ToString(), value.ToString());
+                this.SendChuncked = false;
             }
         }
 
@@ -59,24 +60,66 @@ namespace Batzill.Server.Core.ObjectModel
             get; set;
         }
 
-        public bool? KeepAlive
+        public bool KeepAlive
         {
             get
             {
-                return string.Equals("keep-alive", GetHeaderValue(HttpRequestHeader.Connection.ToString()), StringComparison.InvariantCultureIgnoreCase);
+                string value = GetHeaderValue(HttpRequestHeader.Connection.ToString());
+                if (this.ProtocolVersion.Minor == 1 && string.IsNullOrEmpty(value))
+                {
+                    return true;
+                }
+
+                return string.Equals("keep-alive", value, StringComparison.InvariantCultureIgnoreCase);
+            }
+            set
+            {
+                if (value)
+                {
+                    this.SetHeaderValue(HttpRequestHeader.Connection.ToString(), "keep-alive");
+                }
+                else
+                {
+                    this.SetHeaderValue(HttpRequestHeader.Connection.ToString(), "close");
+                }
             }
         }
 
-        public Stream Stream;
+        public bool SendChuncked
+        {
+            get
+            {
+                return string.Equals("chunked", GetHeaderValue(HttpResponseHeader.TransferEncoding.ToString()), StringComparison.InvariantCultureIgnoreCase);
+            }
+            set
+            {
+                if (value)
+                {
+                    this.SetHeaderValue(HttpResponseHeader.TransferEncoding.ToString(), "chunked");
+                    this.Headers.Remove(HttpResponseHeader.ContentLength.ToString());
+                }
+                else if (this.SendChuncked)
+                {
+                    this.Headers.Remove(HttpResponseHeader.TransferEncoding.ToString());
+                }
+            }
+        }
 
-        public Version ProtocolVersion
+        public Stream Stream
         {
             get; set;
         }
 
-
-        public HttpReqRespBase()
+        public Version ProtocolVersion
         {
+            get;
+            private set;
+        }
+
+
+        public HttpReqRespBase(Version ProtocolVersion)
+        {
+            this.ProtocolVersion = ProtocolVersion;
             this.Cookies = new CookieCollection();
             this.Headers = new NameValueCollection();
             this.Stream = new MemoryStream();
@@ -130,7 +173,6 @@ namespace Batzill.Server.Core.ObjectModel
             }
 
             this.Stream.Write(data, 0, data.Length);
-            this.Stream.Flush();
         }
     }
 }

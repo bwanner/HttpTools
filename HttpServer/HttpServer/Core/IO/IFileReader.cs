@@ -14,5 +14,9 @@ namespace Batzill.Server.Core.IO
         IEnumerable<char> ReadCharByChar();
         IEnumerable<string> ReadLineByLine();
         string ReadEntireFile();
+
+
+        IEnumerable<char> StreamCharByChar(bool skipExisting = true, int idleTimeout = 1000, int sleepTime = 100);
+        IEnumerable<string> StreamLineByLine(bool skipExisting = true, int idleTimeout = 1000, int sleepTime = 100);
     }
 }

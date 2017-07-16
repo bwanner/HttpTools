@@ -93,7 +93,7 @@ namespace Batzill.Server.Core.ObjectModel
             }
         }
 
-        public HttpRequest() : base()
+        public HttpRequest(Version protocolVersion) : base(protocolVersion)
         {
         }
 

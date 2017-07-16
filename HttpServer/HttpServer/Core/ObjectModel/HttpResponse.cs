@@ -33,7 +33,7 @@ namespace Batzill.Server.Core.ObjectModel
             get;  set;
         }
 
-        public HttpResponse() : base()
+        public HttpResponse(Version protocolVersion) : base(protocolVersion)
         {
         }
 

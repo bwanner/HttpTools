@@ -43,7 +43,6 @@ namespace Batzill.Server.Core
         protected abstract void ApplySettingsInternal(HttpServerSettings settings);
 
         protected abstract HttpContext RecieveRequest();
-        protected abstract void SendResponse(HttpContext context);
 
         public bool Restart()
         {
@@ -176,9 +175,10 @@ namespace Batzill.Server.Core
 
                 this.ProcessRequest(operationId, context);
 
-                this.logger.Log(EventType.SystemInformation, "Send operation result.");
+                this.logger.Log(EventType.SystemInformation, "Do a final sync of properties and stream flush.");
 
-                this.SendResponse(context);
+                context.SyncResponse();
+                context.FlushResponse();
                 
                 this.logger.Log(EventType.SystemInformation, "Operation '{0}' finished successful.", operationId);
             });

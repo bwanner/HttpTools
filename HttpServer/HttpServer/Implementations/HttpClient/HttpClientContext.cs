@@ -20,7 +20,7 @@ namespace Batzill.Server.Implementations.HttpClient
 
         private static HttpRequest ConvertRequest(HttpListenerRequest request)
         {
-            return new HttpRequest()
+            return new HttpRequest(request.ProtocolVersion)
             {
                 Cookies = request.Cookies,
                 HasEntityBody = request.HasEntityBody,
@@ -29,13 +29,24 @@ namespace Batzill.Server.Implementations.HttpClient
                 Stream = request.InputStream,
                 IsSecureConnection = request.IsSecureConnection,
                 LocalEndpoint = request.LocalEndPoint,
-                ProtocolVersion = request.ProtocolVersion,
                 RemoteEndpoint = request.RemoteEndPoint,
                 Url = request.Url
             };
         }
 
-        public void SyncResponse()
+        public override void FlushResponse()
+        {
+            this.Response.Stream.Position = 0;
+            this.Response.Stream.CopyTo(this.internalResponse.OutputStream);
+
+            this.Response.Stream.Flush();
+            this.Response.Stream.SetLength(0);
+            this.Response.Stream.Position = 0;
+
+            this.internalResponse.OutputStream.Flush();
+        }
+
+        public override void SyncResponse()
         {
             this.internalResponse.ContentEncoding = this.Response.ContentEncoding;
 
@@ -44,24 +55,34 @@ namespace Batzill.Server.Implementations.HttpClient
                 this.internalResponse.ContentLength64 = this.Response.ContentLength.Value;
             }
 
+            this.internalResponse.SendChunked = this.Response.SendChuncked;
             this.internalResponse.ContentType = this.Response.ContentType;
             this.internalResponse.Cookies = this.Response.Cookies;
 
             this.internalResponse.Headers.Clear();
             this.internalResponse.Headers.Add(this.Response.Headers);
 
-            if (this.Response.KeepAlive.HasValue)
+            if (this.Response.KeepAlive)
             {
-                this.internalResponse.KeepAlive = this.Response.KeepAlive.Value;
+                this.internalResponse.KeepAlive = this.Response.KeepAlive;
             }
 
             this.internalResponse.ProtocolVersion = this.Response.ProtocolVersion;
             this.internalResponse.RedirectLocation = this.Response.RedirectLocation;
             this.internalResponse.StatusCode = this.Response.StatusCode;
             this.internalResponse.StatusDescription = this.Response.StatusDescription;
+        }
 
-            this.Response.Stream.Position = 0;
-            this.Response.Stream.CopyTo(this.internalResponse.OutputStream);
+
+
+        public override void FlushRequest()
+        {
+            return;
+        }
+
+        public override void SyncRequest()
+        {
+            return;
         }
     }
 }

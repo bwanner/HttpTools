@@ -77,6 +77,7 @@
     <Compile Include="Core\ObjectModel\HttpReqRespBase.cs" />
     <Compile Include="Core\ObjectModel\HttpRequest.cs" />
     <Compile Include="Core\ObjectModel\HttpResponse.cs" />
+    <Compile Include="Core\Operations\CustomOperations\StreamLogsOperation.cs" />
     <Compile Include="Core\Operations\CustomOperations\DumpLogsOperation.cs" />
     <Compile Include="Core\Operations\CustomOperations\WaitOperation.cs" />
     <Compile Include="Core\Operations\CustomOperations\EchoOperation.cs" />

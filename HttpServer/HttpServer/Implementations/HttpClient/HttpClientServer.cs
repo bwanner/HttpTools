@@ -53,21 +53,6 @@ namespace Batzill.Server
             return new HttpClientContext(context.Request, context.Response);
         }
 
-        protected override void SendResponse(HttpContext context)
-        {
-            if (context is HttpClientContext == false)
-            {
-                this.logger.Log(EventType.SystemError, "Fatal Error, HttpClientServer can't procces HttpContext of type '{0}", context.GetType());
-                throw new ArgumentException("context");
-            }
-
-            HttpClientContext customContext = context as HttpClientContext;
-            customContext.SyncResponse();
-
-            customContext.internalResponse.OutputStream.Flush();
-            customContext.internalResponse.Close();
-        }
-
         private bool ApplyPrefixes(HttpServerSettings settings)
         {
             if (!Int32.TryParse(settings.Get(HttpServerSettingNames.Port), out int port))

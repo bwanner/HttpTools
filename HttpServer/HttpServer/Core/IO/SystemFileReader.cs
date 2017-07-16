@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Batzill.Server.Core.IO
@@ -17,6 +18,11 @@ namespace Batzill.Server.Core.IO
             {
                this.Open(file, lockFile);
             }
+        }
+
+        public void Dispose()
+        {
+            this.Close();
         }
 
         public IDisposable Open(string file, bool lockFile = false)
@@ -72,9 +78,56 @@ namespace Batzill.Server.Core.IO
             }
         }
 
-        public void Dispose()
+        public IEnumerable<char> StreamCharByChar(bool skipExisting = true, int idleTimeout = 1000, int sleepTime = 100)
         {
-            this.Close();
+            using (StreamReader reader = new StreamReader(this.fileStream))
+            {
+                long idleTime = 0;
+
+                if (skipExisting)
+                {
+                    reader.BaseStream.Seek(0, SeekOrigin.End);
+                }
+
+                do
+                {
+                    while (!reader.EndOfStream)
+                    {
+                        yield return (char)reader.Read();
+                        idleTime = 0;
+                    }
+
+                    Thread.Sleep(sleepTime);
+                    idleTime += sleepTime;
+                    
+                } while (idleTime < idleTimeout);
+            }
+        }
+
+        public IEnumerable<string> StreamLineByLine(bool skipExisting = true, int idleTimeout = 1000, int sleepTime = 100)
+        {
+            using (StreamReader reader = new StreamReader(this.fileStream))
+            {
+                long idleTime = 0;
+
+                if (skipExisting)
+                {
+                    reader.BaseStream.Seek(0, SeekOrigin.End);
+                }
+
+                do
+                {
+                    while (!reader.EndOfStream)
+                    {
+                        yield return reader.ReadLine();
+                        idleTime = 0;
+                    }
+
+                    Thread.Sleep(sleepTime);
+                    idleTime += sleepTime;
+
+                } while (idleTime < idleTimeout);
+            }
         }
     }
 }

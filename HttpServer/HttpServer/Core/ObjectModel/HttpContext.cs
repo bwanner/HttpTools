@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Batzill.Server.Core.ObjectModel
 {
-    public class HttpContext
+    public abstract class HttpContext
     {
         public HttpRequest Request
         {
@@ -20,24 +20,21 @@ namespace Batzill.Server.Core.ObjectModel
             private set;
         }
 
-        public HttpContext() : this(new HttpRequest(), new HttpResponse()) { }
+        public HttpContext(Version protocolVersion) : this(new HttpRequest(protocolVersion), new HttpResponse(protocolVersion)) { }
 
-        public HttpContext(HttpRequest request) : this(request, new HttpResponse()) { }
+        public HttpContext(HttpRequest request) : this(request, new HttpResponse(request.ProtocolVersion)) {
+        }
+        public HttpContext(HttpResponse response) : this(new HttpRequest(response.ProtocolVersion), response) { }
 
         public HttpContext(HttpRequest request, HttpResponse response)
         {
             this.Request = request;
             this.Response = response;
-
-            this.Sync();
         }
 
-        /// <summary>
-        /// Syncs properties from the request to the respone (ProtocolVersion, ...)
-        /// </summary>
-        protected void Sync()
-        {
-            this.Response.ProtocolVersion = this.Request.ProtocolVersion;
-        }
+        public abstract void SyncResponse();
+        public abstract void FlushResponse();
+        public abstract void SyncRequest();
+        public abstract void FlushRequest();
     }
 }
