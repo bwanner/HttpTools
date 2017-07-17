@@ -6,9 +6,7 @@ namespace Batzill.Server.Core.Settings
     public static class HttpServerSettingDefaults
     {
         public const string DefaultMonitorSettingsFileChange = "false";
-        public const string DefaultProtocol = "http";
-        public const string DefaultBinding = "+";
-        public const string DefaultPort = "5555";
+        public const string DefaultEndpoint = "http:\\+:5555";
 
         public const string DefaultIdleTimeout = "60";
         public const string DefaultConnectionLimit = "20";

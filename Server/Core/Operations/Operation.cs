@@ -43,7 +43,7 @@ namespace Batzill.Server.Core
         public void Initialize(Logger logger, HttpServerSettings settings, string operationId)
         {
             this.logger = logger;
-            this.settings = settings;
+            this.settings = settings.Clone();
             this.ID = operationId;
         }
 

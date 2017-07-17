@@ -13,41 +13,17 @@ namespace Batzill.Server.Core.ObjectModel
     {
         public Encoding ContentEncoding
         {
-            get
-            {
-                var value = GetHeaderValue(HttpRequestHeader.ContentEncoding.ToString());
-                return value == null ? null : Encoding.GetEncoding(value);
-            }
-            set
-            {
-                this.SetHeaderValue(HttpRequestHeader.ContentEncoding.ToString(), value.WebName.ToString());
-            }
+            get; set;
         }
 
-        public long? ContentLength
+        public long ContentLength
         {
-            get
-            {
-                var value = GetHeaderValue(HttpRequestHeader.ContentLength.ToString());
-                return value == null ? (long?)null : Convert.ToInt64(value);
-            }
-            set
-            {
-                this.SetHeaderValue(HttpRequestHeader.ContentLength.ToString(), value.ToString());
-                this.SendChuncked = false;
-            }
+            get; set;
         }
 
         public string ContentType
         {
-            get
-            {
-                return this.GetHeaderValue(HttpRequestHeader.ContentType.ToString());
-            }
-            set
-            {
-                this.SetHeaderValue(HttpRequestHeader.ContentType.ToString(), value);
-            }
+            get; set;
         }
 
         public CookieCollection Cookies
@@ -62,47 +38,12 @@ namespace Batzill.Server.Core.ObjectModel
 
         public bool KeepAlive
         {
-            get
-            {
-                string value = GetHeaderValue(HttpRequestHeader.Connection.ToString());
-                if (this.ProtocolVersion.Minor == 1 && string.IsNullOrEmpty(value))
-                {
-                    return true;
-                }
-
-                return string.Equals("keep-alive", value, StringComparison.InvariantCultureIgnoreCase);
-            }
-            set
-            {
-                if (value)
-                {
-                    this.SetHeaderValue(HttpRequestHeader.Connection.ToString(), "keep-alive");
-                }
-                else
-                {
-                    this.SetHeaderValue(HttpRequestHeader.Connection.ToString(), "close");
-                }
-            }
+            get; set;
         }
 
         public bool SendChuncked
         {
-            get
-            {
-                return string.Equals("chunked", GetHeaderValue(HttpResponseHeader.TransferEncoding.ToString()), StringComparison.InvariantCultureIgnoreCase);
-            }
-            set
-            {
-                if (value)
-                {
-                    this.SetHeaderValue(HttpResponseHeader.TransferEncoding.ToString(), "chunked");
-                    this.Headers.Remove(HttpResponseHeader.ContentLength.ToString());
-                }
-                else if (this.SendChuncked)
-                {
-                    this.Headers.Remove(HttpResponseHeader.TransferEncoding.ToString());
-                }
-            }
+            get; set;
         }
 
         public Stream Stream
@@ -166,11 +107,7 @@ namespace Batzill.Server.Core.ObjectModel
 
             byte[] data = encoding.GetBytes(value);
 
-            if (this.ContentLength != null)
-            {
-                this.ContentLength += data.Length;
-            }
-
+            this.ContentLength += data.Length;
             this.Stream.Write(data, 0, data.Length);
         }
     }

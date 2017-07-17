@@ -10,9 +10,7 @@ namespace Batzill.Server.Core.Settings
     {
         public const string MonitorSettingsFileChange = "MonitorSettingsFileChange";
 
-        public const string Protocol = "Protocol";
-        public const string Binding = "Bindings";
-        public const string Port = "Port";
+        public const string Endpoint = "Endpoint";
 
         public const string IdleTimeout = "IdleTimeout";
         public const string ConnectionLimit = "ConnectionLimit";

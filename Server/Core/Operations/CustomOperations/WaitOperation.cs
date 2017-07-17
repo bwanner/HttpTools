@@ -73,7 +73,7 @@ namespace Batzill.Server.Core.Operations
 
         public override bool Match(HttpContext context)
         {
-            return System.Text.RegularExpressions.Regex.IsMatch(context.Request.RawUrl, WaitOperation.InputRegex, RegexOptions.IgnoreCase);
+            return Regex.IsMatch(context.Request.RawUrl, WaitOperation.InputRegex, RegexOptions.IgnoreCase);
         }
     }
 }

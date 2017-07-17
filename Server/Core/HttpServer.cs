@@ -2,18 +2,11 @@
 using Batzill.Server.Core.ObjectModel;
 using Batzill.Server.Core.Settings;
 using System;
-using System.Collections.Generic;
-using System.Collections.Specialized;
-using System.Linq;
-using System.Net;
-using System.Net.Sockets;
-using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace Batzill.Server.Core
 {
-    public abstract class HttpServer
+    public abstract class HttpServer : ISettingsChangable
     {
         public abstract bool IsRunning
         {
@@ -25,17 +18,16 @@ namespace Batzill.Server.Core
 
         private Task mainTask;
         private int maxConcurrentConnections;
+        private bool correctConfigured = false;
 
         protected Logger logger;
         protected HttpServerSettings settings;
 
-        protected HttpServer(Logger logger, HttpServerSettings settings, IOperationFactory operationFactory, TaskFactory factory)
+        protected HttpServer(Logger logger, IOperationFactory operationFactory, TaskFactory factory)
         {
             this.logger = logger;
             this.operationFactory = operationFactory;
             this.taskfactory = factory;
-
-            settings.Provider.SettingsChanged += this.ApplySettings;
         }
 
         protected abstract void StartInternal();
@@ -53,26 +45,34 @@ namespace Batzill.Server.Core
 
         public bool Start()
         {
-            try
+            if (this.correctConfigured)
             {
-                this.logger.Log(EventType.SystemInformation, "Attempting to start the HttpServer.");
+                try
+                {
+                    this.logger.Log(EventType.SystemInformation, "Attempting to start the HttpServer.");
 
-                this.logger.Log(EventType.SystemInformation, "Setp 1: Load operations.");
-                this.operationFactory.LoadOperations();
+                    this.logger.Log(EventType.SystemInformation, "Setp 1: Load operations.");
+                    this.operationFactory.LoadOperations();
 
-                this.logger.Log(EventType.SystemInformation, "Setp 2: Start listening on bindings.");
-                this.StartInternal();
+                    this.logger.Log(EventType.SystemInformation, "Setp 2: Start listening on bindings.");
+                    this.StartInternal();
 
-                this.logger.Log(EventType.SystemInformation, "Setp 3: Start request management.");
-                this.Run();
+                    this.logger.Log(EventType.SystemInformation, "Setp 3: Start request management.");
+                    this.Run();
 
-                this.logger.Log(EventType.SystemInformation, "Successfully started the HttpServer.");
+                    this.logger.Log(EventType.SystemInformation, "Successfully started the HttpServer.");
 
-                return true;
+                    return true;
+                }
+                catch (Exception ex)
+                {
+                    this.logger.Log(EventType.SystemError, "Unable to start HttpServer: {0}", ex.ToString());
+                    return false;
+                }
             }
-            catch (Exception ex)
+            else
             {
-                this.logger.Log(EventType.SystemError, "Unable to start HttpServer: {0}", ex.ToString());
+                this.logger.Log(EventType.SystemInformation, "Settings are in an invalid state, update settings and try again.");
                 return false;
             }
         }
@@ -96,35 +96,65 @@ namespace Batzill.Server.Core
             }
         }
 
-        protected void ApplySettings(object sender, HttpServerSettings settings)
+        public bool ApplySettings(HttpServerSettings settings)
         {
-            this.logger.Log(EventType.ServerSetup, "Settings update got requested.");
+            this.logger.Log(EventType.ServerSetup, "Attempting to update server settings.");
 
-            this.settings = settings.Clone();
+            if (settings == null)
+            {
+                this.logger.Log(EventType.ServerSetup, "Provided settings are null, skip update.");
+                return false;
+            }
 
-            bool successfulSoFar = true;
             bool startStopServer = this.IsRunning;
+            this.settings = settings.Clone();
 
             if (startStopServer)
             {
                 this.logger.Log(EventType.ServerSetup, "HttpServer is running, attempting to stop the gateway for the settings update.");
-                this.StopInternal();
+
+                if (!this.Stop())
+                {
+                    this.logger.Log(EventType.ServerSetup, "HttpServer is still running, applying settings failed.");
+                    return false;
+                }
             }
 
-            // update shared settings first
-            this.ApplyCoreSettings(settings);
+            try
+            {
+                // update shared settings first
+                this.ApplyCoreSettings(settings);
 
-            // call update method of child 
-            this.ApplySettingsInternal(settings);
+                // call update method of child 
+                this.ApplySettingsInternal(settings);
 
-            if (successfulSoFar && startStopServer)
+                this.correctConfigured = true;
+            }
+            catch(Exception ex)
+            {
+                this.logger.Log(EventType.SystemError, ex.ToString());
+                this.logger.Log(EventType.SystemError, "Error occured while applying settings, please check logs for more information.");
+                this.correctConfigured = false;
+            }
+
+            if (this.correctConfigured && startStopServer)
             {
                 this.logger.Log(EventType.ServerSetup, "HttpServer was running before, attempting to start the gateway after the settings update.");
-                this.StartInternal();
+                if (!this.Start())
+                {
+                    this.logger.Log(EventType.ServerSetup, "Unable sto start server, applying settings failed.");
+                    return false;
+                }
             }
+            else
+            {
+                this.logger.Log(EventType.ServerSetup, "HttpServer is in stopped state.");
+            }
+
+            return true;
         }
 
-        private bool ApplyCoreSettings(HttpServerSettings settings)
+        private void ApplyCoreSettings(HttpServerSettings settings)
         {
             if (!Int32.TryParse(settings.Get(HttpServerSettingNames.ConnectionLimit), out this.maxConcurrentConnections))
             {
@@ -132,8 +162,6 @@ namespace Batzill.Server.Core
             }
 
             this.logger.Log(EventType.ServerSetup, "Set ConnectionLimit to {0}.", this.maxConcurrentConnections);
-
-            return true;
         }
 
         protected void Run()
@@ -194,7 +222,7 @@ namespace Batzill.Server.Core
 
             // initialize operation
             FrontendOperationLogger logger = new FrontendOperationLogger(this.logger.logWriter, operationId, operation.Name);
-            operation.Initialize(logger, settings, operationId);
+            operation.Initialize(logger, settings.Clone(), operationId);
 
             logger.Log(EventType.OperationInformation, "Start executing operation: '{0}', id: '{1}'.", operation.Name, operation.ID);
 

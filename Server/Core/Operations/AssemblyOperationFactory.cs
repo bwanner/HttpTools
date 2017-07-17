@@ -16,10 +16,12 @@ namespace Batzill.Server.Core
         private Logger logger;
         private SortedSet<Operation> operations;
 
-        public AssemblyOperationFactory(Logger logger)
+        public AssemblyOperationFactory(Logger logger, HttpServerSettings settings = null)
         {
             this.logger = logger;
             this.operations = new SortedSet<Operation>(new OperationPriorityComparer());
+
+            this.ApplySettings(settings);
         }
 
         public void LoadOperations()
@@ -99,6 +101,11 @@ namespace Batzill.Server.Core
             }
             
             return (Operation)Activator.CreateInstance(operationType);
+        }
+
+        public bool ApplySettings(HttpServerSettings settings)
+        {
+            return true;
         }
     }
 }

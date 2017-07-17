@@ -71,26 +71,12 @@ namespace Batzill.Server.Core.ObjectModel
 
         public string UserAgent
         {
-            get
-            {
-                return this.GetHeaderValue(HttpRequestHeader.UserAgent.ToString());
-            }
-            set
-            {
-                this.SetHeaderValue(HttpRequestHeader.UserAgent.ToString(), value);
-            }
+            get; set;
         }
 
         public string UserHostName
         {
-            get
-            {
-                return this.GetHeaderValue(HttpRequestHeader.Host.ToString());
-            }
-            set
-            {
-                this.SetHeaderValue(HttpRequestHeader.Host.ToString(), value);
-            }
+            get; set;
         }
 
         public HttpRequest(Version protocolVersion) : base(protocolVersion)

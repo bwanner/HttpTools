@@ -50,21 +50,22 @@ namespace Batzill.Server.Core.Settings
             }
         }
 
-        public readonly HttpServerSettingsProvider Provider;
-
-        public HttpServerSettings(HttpServerSettingsProvider provider)
+        public HttpServerSettings()
         {
-            this.Provider = provider;
             this.settings = new Dictionary<string, string>();
         }
 
-        public void Set(string name, string value)
+        public void Set(string name, string value, bool append = false)
         {
             name = this.PrepareName(name);
 
             if (!this.Contains(name, false))
             {
                 this.settings.Add(name, value);
+            }
+            else if (append)
+            {
+                this.settings[name] = string.Format("{0}{1}{2}", this.settings[name], Environment.NewLine, value);
             }
             else
             {
@@ -124,7 +125,7 @@ namespace Batzill.Server.Core.Settings
 
         public HttpServerSettings Clone()
         {
-            HttpServerSettings result = new HttpServerSettings(this.Provider);
+            HttpServerSettings result = new HttpServerSettings();
             foreach (KeyValuePair<string, string> entry in this.settings)
             {
                 result.Set(entry.Key.ToString(), entry.Value.ToString());

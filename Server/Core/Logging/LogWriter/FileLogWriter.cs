@@ -14,16 +14,28 @@ namespace Batzill.Server.Core.Logging
         public FileLogWriter(IFileWriter fileWriter, HttpServerSettings settings)
         {
             this.fileWriter = fileWriter;
-            this.ApplySettings(null, settings);
-
-            settings.Provider.SettingsChanged += this.ApplySettings;
+            this.ApplySettings(settings);
         }
-
-        public void ApplySettings(object sender, HttpServerSettings settings)
+        
+        public bool ApplySettings(HttpServerSettings settings)
         {
+            if (settings == null)
+            {
+                return false;
+            }
+
             lock (this.fileWriter)
             {
-                this.file = Path.Combine(settings.Get(HttpServerSettingNames.LogFolder), settings.Get(HttpServerSettingNames.LogFileName));
+                try
+                {
+                    this.file = Path.Combine(settings.Get(HttpServerSettingNames.LogFolder), settings.Get(HttpServerSettingNames.LogFileName));
+                }
+                catch (Exception ex)
+                {
+                    return false;
+                }
+
+                return true;
             }
         }
 

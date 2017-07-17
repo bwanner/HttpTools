@@ -13,14 +13,7 @@ namespace Batzill.Server.Core.ObjectModel
     {
         public string RedirectLocation
         {
-            get
-            {
-                return this.GetHeaderValue(HttpResponseHeader.Location.ToString());
-            }
-            set
-            {
-                this.SetHeaderValue(HttpResponseHeader.Location.ToString(), value);
-            }
+            get; set;
         }
 
         public int StatusCode
@@ -49,7 +42,7 @@ namespace Batzill.Server.Core.ObjectModel
         {
             this.StatusCode = 302;
             this.StatusDescription = "Redirect";
-            this.RedirectLocation = StatusDescription;
+            this.RedirectLocation = url;
         }
     }
 }

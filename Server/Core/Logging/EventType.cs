@@ -47,6 +47,7 @@ namespace Batzill.Server.Core.Logging
         SystemError = 0x1300000,
         SettingsParsingError = 0x1300001,
         OperationLoadingError = 0x1300002,
+        SettingInvalid = 0x1300003,
 
         #endregion
 

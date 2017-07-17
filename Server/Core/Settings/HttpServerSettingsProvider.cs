@@ -14,7 +14,7 @@ namespace Batzill.Server.Core.Settings
     public class HttpServerSettingsProvider : IDisposable
     {
         // regex expressions
-        public const string RegexSettingsEntry = @"^([a-zA-Z0-9\-\.]+) (.+)$";
+        public const string RegexSettingsEntry = @"^([a-zA-Z0-9\-\.]+)(\+?) (.+)$";
 
         public event EventHandler<HttpServerSettings> SettingsChanged;
 
@@ -70,20 +70,21 @@ namespace Batzill.Server.Core.Settings
                     {
                         int lineNumber = 1;
                         bool successful = true;
-                        HttpServerSettings settings = new HttpServerSettings(this);
+                        HttpServerSettings settings = new HttpServerSettings();
 
                         foreach (string line in this.fileReader.ReadLineByLine())
                         {
                             Match match = Regex.Match(line.TrimEnd(), HttpServerSettingsProvider.RegexSettingsEntry, RegexOptions.IgnoreCase);
 
-                            if (match.Success && match.Groups.Count == 3)
+                            if (match.Success)
                             {
                                 string name = match.Groups[1].Value;
-                                string value = match.Groups[2].Value;
+                                bool append = !string.IsNullOrEmpty(match.Groups[2].Value);
+                                string value = match.Groups[3].Value;
 
-                                this.logger.Log(EventType.SystemSettings, "Found Setting '{0}'. Value: '{1}'", name, value);
+                                this.logger.Log(EventType.SystemSettings, "Found Setting '{0}', Value: '{1}' ({2})", name, value, append ? "append" : "set");
 
-                                settings.Set(name, value);
+                                settings.Set(name, value, append);
                             }
                             else
                             {

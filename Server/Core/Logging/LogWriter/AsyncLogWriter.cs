@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Batzill.Server.Core.Settings;
 
 namespace Batzill.Server.Core.Logging
 {
@@ -13,6 +14,11 @@ namespace Batzill.Server.Core.Logging
         public AsyncLogWriter(ILogWriter logWriter)
         {
             this.logWriter = logWriter;
+        }
+
+        public bool ApplySettings(HttpServerSettings settings)
+        {
+            return this.logWriter.ApplySettings(settings);
         }
 
         public void WriteLog(Log log)

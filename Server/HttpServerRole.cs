@@ -8,6 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.IO;
+using Batzill.Server.Core.SSLBindingHelper;
 
 namespace Batzill.Server
 {
@@ -15,14 +16,16 @@ namespace Batzill.Server
     {
         private const string DefaultSettingsFilePath = "default.cfg";
 
-        private static HttpServerSettingsProvider settingsProvider;
         private static Logger logger;
+        private static HttpServer httpServer;
+        private static IOperationFactory operationFactory;
+        private static HttpServerSettingsProvider settingsProvider;
 
         static void Main(string[] args)
         {
             HttpServerRole.SetupBasicLogging();
             HttpServerRole.Initialize(args);
-
+            HttpServerRole.Start();
 
             Console.ReadLine();
         }
@@ -44,18 +47,40 @@ namespace Batzill.Server
 
         private static void Initialize(string[] args)
         {
-            // get args first
+            // get settings first
             string settingsFile = args == null || args.Length == 0 ? Path.Combine(AppDomain.CurrentDomain.BaseDirectory, HttpServerRole.DefaultSettingsFilePath) : args[0];
 
-            // get setting!
             HttpServerRole.settingsProvider = new HttpServerSettingsProvider(logger, new SystemFileReader(), settingsFile);
 
             // setup regular logging
             HttpServerRole.SetupLogging();
 
-            HttpServer httpServer = new HttpClientServer(HttpServerRole.logger, HttpServerRole.settingsProvider.Settings, new AssemblyOperationFactory(HttpServerRole.logger), new TaskFactory());
+            // setup operation factory
+            HttpServerRole.operationFactory = new AssemblyOperationFactory(HttpServerRole.logger, HttpServerRole.settingsProvider.Settings);
 
-            httpServer.Start();
+            // setup httpServer
+            HttpServerRole.httpServer = new HttpClientServer(
+                HttpServerRole.logger,
+                HttpServerRole.operationFactory,
+                new TaskFactory(), 
+                HttpServerRole.settingsProvider.Settings,
+                new NetshWrapper(HttpServerRole.logger));
+        }
+
+        private static void Start()
+        {
+            while (!HttpServerRole.httpServer.Start())
+            {
+                Console.Write("Start failed, press ENTER to try again.");
+                Console.ReadLine();
+            }
+        }
+
+        private static void SettingsChangedEventHandler(HttpServerSettings settings)
+        {
+            HttpServerRole.logger.ApplySettings(settings);
+            HttpServerRole.operationFactory.ApplySettings(settings);
+            HttpServerRole.httpServer.ApplySettings(settings);
         }
     }
 }

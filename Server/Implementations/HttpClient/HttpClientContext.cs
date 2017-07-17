@@ -20,18 +20,12 @@ namespace Batzill.Server.Implementations.HttpClient
 
         public override void SyncResponse()
         {
-            if (this.Response.ContentLength.HasValue && this.internalResponse.SendChunked)
-            {
-                this.internalResponse.ContentEncoding = this.Response.ContentEncoding;
-                this.internalResponse.ContentType = this.Response.ContentType;
-            }
+            this.internalResponse.ContentEncoding = this.Response.ContentEncoding;
+            this.internalResponse.ContentType = this.Response.ContentType;
 
-            if (this.Response.ContentLength.HasValue)
-            {
-                this.internalResponse.ContentLength64 = this.Response.ContentLength.Value;
-            }
-
+            this.internalResponse.ContentLength64 = this.Response.ContentLength;
             this.internalResponse.SendChunked = this.Response.SendChuncked;
+
             this.internalResponse.Cookies = this.Response.Cookies;
 
             this.internalResponse.Headers.Clear();
@@ -41,6 +35,7 @@ namespace Batzill.Server.Implementations.HttpClient
 
             this.internalResponse.ProtocolVersion = this.Response.ProtocolVersion;
             this.internalResponse.RedirectLocation = this.Response.RedirectLocation;
+
             this.internalResponse.StatusCode = this.Response.StatusCode;
             this.internalResponse.StatusDescription = this.Response.StatusDescription;
         }

@@ -9,7 +9,7 @@ using Batzill.Server.Core.Settings;
 
 namespace Batzill.Server.Core
 {
-    public interface IOperationFactory
+    public interface IOperationFactory : ISettingsChangable
     {
         Operation CreateMatchingOperation(HttpContext context);
         void LoadOperations();
