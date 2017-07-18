@@ -41,7 +41,7 @@ namespace Batzill.Server.Core.Operations
 
             this.logger.Log(EventType.OperationInformation, "Got request to wait, try parsing seconds passed by client.");
 
-            Match result = System.Text.RegularExpressions.Regex.Match(context.Request.RawUrl, WaitOperation.InputRegex, RegexOptions.IgnoreCase);
+            Match result = Regex.Match(context.Request.RawUrl, WaitOperation.InputRegex, RegexOptions.IgnoreCase);
             if (result.Success && result.Groups.Count == 2 && !string.IsNullOrEmpty(result.Groups[1].Value))
             {
                 if (Int32.TryParse(result.Groups[1].Value, out int waitInSec))
@@ -65,7 +65,7 @@ namespace Batzill.Server.Core.Operations
             {
                 this.logger.Log(EventType.OperationInformation, "No number passed, return info page.");
 
-                context.Response.WriteContent("Call '/wait/[number]' to have to server wait [number] seconds before replying.");
+                context.Response.WriteContent("Call '/wait/[number]' to have the server wait [number] seconds before replying.");
             }
 
             return;

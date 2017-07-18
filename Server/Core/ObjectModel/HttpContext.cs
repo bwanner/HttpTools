@@ -20,6 +20,18 @@ namespace Batzill.Server.Core.ObjectModel
             private set;
         }
 
+        public bool SyncAllowed
+        {
+            get;
+            private set;
+        }
+
+        public bool FlushAllowed
+        {
+            get;
+            private set;
+        }
+
         public HttpContext(Version protocolVersion) : this(new HttpRequest(protocolVersion), new HttpResponse(protocolVersion)) { }
 
         public HttpContext(HttpRequest request) : this(request, new HttpResponse(request.ProtocolVersion)) {
@@ -30,14 +42,73 @@ namespace Batzill.Server.Core.ObjectModel
         {
             this.Request = request;
             this.Response = response;
+
+            this.SyncAllowed = true;
+            this.FlushAllowed = true;
         }
 
-        public abstract void SyncResponse();
-        public abstract void FlushResponse();
-        public abstract void CloseResponse();
+        public void SyncResponse()
+        {
+            if (!this.SyncAllowed)
+            {
+                throw new InvalidOperationException("Not allowed to sync response, either Flush or Close was already invoked.");
+            }
 
-        public abstract void SyncRequest();
-        public abstract void FlushRequest();
-        public abstract void CloseRequest();
+            this.SyncResponseInternal();
+        }
+
+        public void FlushResponse()
+        {
+            if (!this.FlushAllowed)
+            {
+                throw new InvalidOperationException("Not allowed to flush response, Close was already invoked.");
+            }
+
+            this.SyncAllowed = false;
+            this.FlushResponseInternal();
+        }
+
+        public void CloseResponse()
+        {
+            this.SyncAllowed = false;
+            this.FlushAllowed = false;
+            this.CloseResponseInternal();
+        }
+
+        public void SyncRequest()
+        {
+            if (!this.SyncAllowed)
+            {
+                throw new InvalidOperationException("Not allowed to sync request, either Flush or Close was already invoked.");
+            }
+
+            this.SyncRequestInternal();
+        }
+
+        public void FlushRequest()
+        {
+            if (!this.FlushAllowed)
+            {
+                throw new InvalidOperationException("Not allowed to flush request, Close was already invoked.");
+            }
+
+            this.SyncAllowed = false;
+            this.FlushRequestInternal();
+        }
+
+        public void CloseRequest()
+        {
+            this.SyncAllowed = false;
+            this.FlushAllowed = false;
+            this.CloseRequestInternal();
+        }
+
+        protected abstract void SyncResponseInternal();
+        protected abstract void FlushResponseInternal();
+        protected abstract void CloseResponseInternal();
+
+        protected abstract void SyncRequestInternal();
+        protected abstract void FlushRequestInternal();
+        protected abstract void CloseRequestInternal();
     }
 }

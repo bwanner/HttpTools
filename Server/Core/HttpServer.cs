@@ -205,8 +205,16 @@ namespace Batzill.Server.Core
 
                 this.logger.Log(EventType.SystemInformation, "Do a final header sync, stream flush and a close.");
 
-                context.SyncResponse();
-                context.FlushResponse();
+                if (context.SyncAllowed)
+                {
+                    context.SyncResponse();
+                }
+
+                if (context.FlushAllowed)
+                {
+                    context.FlushResponse();
+                }
+
                 context.CloseResponse();
                 
                 this.logger.Log(EventType.SystemInformation, "Operation '{0}' finished successful.", operationId);

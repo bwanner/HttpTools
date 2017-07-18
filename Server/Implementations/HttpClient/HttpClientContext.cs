@@ -13,35 +13,45 @@ namespace Batzill.Server.Implementations.HttpClient
     {
         public HttpListenerResponse internalResponse;
 
+        private bool responseStarted;
+
         public HttpClientContext(HttpListenerRequest request, HttpListenerResponse response) : base(HttpClientContext.ConvertRequest(request))
         {
             this.internalResponse = response;
+            this.responseStarted = false;
         }
 
-        public override void SyncResponse()
+        protected override void SyncResponseInternal()
         {
-            this.internalResponse.ContentEncoding = this.Response.ContentEncoding;
-            this.internalResponse.ContentType = this.Response.ContentType;
+            // Can't sync settings after response started (these are header values!)
+            if (!this.responseStarted)
+            {
+                this.internalResponse.ContentEncoding = this.Response.ContentEncoding;
+                this.internalResponse.ContentType = this.Response.ContentType;
 
-            this.internalResponse.ContentLength64 = this.Response.ContentLength;
-            this.internalResponse.SendChunked = this.Response.SendChuncked;
+                this.internalResponse.ContentLength64 = this.Response.ContentLength;
+                this.internalResponse.SendChunked = this.Response.SendChuncked;
 
-            this.internalResponse.Cookies = this.Response.Cookies;
+                this.internalResponse.Cookies = this.Response.Cookies;
 
-            this.internalResponse.Headers.Clear();
-            this.internalResponse.Headers.Add(this.Response.Headers);
+                this.internalResponse.Headers.Clear();
+                this.internalResponse.Headers.Add(this.Response.Headers);
 
-            this.internalResponse.KeepAlive = this.Response.KeepAlive;
+                this.internalResponse.KeepAlive = this.Response.KeepAlive;
 
-            this.internalResponse.ProtocolVersion = this.Response.ProtocolVersion;
-            this.internalResponse.RedirectLocation = this.Response.RedirectLocation;
+                this.internalResponse.ProtocolVersion = this.Response.ProtocolVersion;
+                this.internalResponse.RedirectLocation = this.Response.RedirectLocation;
 
-            this.internalResponse.StatusCode = this.Response.StatusCode;
-            this.internalResponse.StatusDescription = this.Response.StatusDescription;
+                this.internalResponse.StatusCode = this.Response.StatusCode;
+                this.internalResponse.StatusDescription = this.Response.StatusDescription;
+            }
         }
 
-        public override void FlushResponse()
+        protected override void FlushResponseInternal()
         {
+            // Marke response as started
+            this.responseStarted = true;
+
             this.Response.Stream.Position = 0;
             this.Response.Stream.CopyTo(this.internalResponse.OutputStream);
 
@@ -52,22 +62,22 @@ namespace Batzill.Server.Implementations.HttpClient
             this.internalResponse.OutputStream.Flush();
         }
 
-        public override void CloseResponse()
+        protected override void CloseResponseInternal()
         {
             this.internalResponse.Close();
         }
-        
-        public override void SyncRequest()
+
+        protected override void SyncRequestInternal()
         {
             return;
         }
 
-        public override void FlushRequest()
+        protected override void FlushRequestInternal()
         {
             return;
         }
 
-        public override void CloseRequest()
+        protected override void CloseRequestInternal()
         {
             return;
         }
