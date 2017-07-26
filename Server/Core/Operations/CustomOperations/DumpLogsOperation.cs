@@ -14,6 +14,7 @@ namespace Batzill.Server.Core.Operations
 {
     public class DumpLogsOperation : Operation
     {
+        public const string InputRegex = @"^\/logs((\/?)|(\/operation\/([a-fA-F0-9\-]+)))$";
 
         public override int Priority
         {
@@ -39,22 +40,47 @@ namespace Batzill.Server.Core.Operations
         {
             context.Response.SetDefaultValues();
 
-            this.logger.Log(EventType.OperationInformation, "Start dumping log file");
-            
-            string file = Path.Combine(settings.Get(HttpServerSettingNames.LogFolder), settings.Get(HttpServerSettingNames.LogFileName));
-            using (SystemFileReader reader = new SystemFileReader(file))
+            Match match = Regex.Match(context.Request.RawUrl, DumpLogsOperation.InputRegex);
+            if(match.Success)
             {
-                context.Response.WriteContent(reader.ReadEntireFile());
+                string file = "";
+                if(string.IsNullOrEmpty(match.Groups[4].Value))
+                {
+                    file = Path.Combine(settings.Get(HttpServerSettingNames.LogFolder), settings.Get(HttpServerSettingNames.LogFileName));
+                }
+                else
+                {
+                    file = Path.Combine(settings.Get(HttpServerSettingNames.LogFolder), settings.Get(HttpServerSettingNames.LogFolderOperations), OperationLogWriter.OperationCollectionFolder, string.Format("{0}.log", match.Groups[4].Value));
+                }
+
+                if(!File.Exists(file))
+                {
+                    this.logger.Log(EventType.OperationError, "Invalid request: '{0}'.", context.Request.RawUrl);
+                    context.Response.WriteContent(string.Format("Invalid request: '{0}'. Check settings!", context.Request.RawUrl));
+                    return;
+                }
+
+                this.logger.Log(EventType.OperationInformation, "Start dumping log file");
+
+                using (SystemFileReader reader = new SystemFileReader(file))
+                {
+                    context.Response.WriteContent(reader.ReadEntireFile());
+                }
+
+                this.logger.Log(EventType.OperationInformation, "Finished dumping logs, dumped {0:0.###}KB", (context.Response.ContentLength / ((double)1024)));
             }
-            
-            this.logger.Log(EventType.OperationInformation, "Finished dumping logs, dumped {0:0.###}KB", (context.Response.ContentLength / ((double)1024)));
+            else
+            {
+                this.logger.Log(EventType.OperationError, "Unknown request: '{0}'.", context.Request.RawUrl);
+                context.Response.WriteContent(string.Format("Unknown request: '{0}'.", context.Request.RawUrl));
+            }
 
             return;
         }
 
         public override bool Match(HttpContext context)
         {
-            return Regex.IsMatch(context.Request.RawUrl, "^/logs/?$", RegexOptions.IgnoreCase);
+            return Regex.IsMatch(context.Request.RawUrl, DumpLogsOperation.InputRegex, RegexOptions.IgnoreCase);
         }
     }
 }

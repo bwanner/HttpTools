@@ -28,6 +28,11 @@ namespace Batzill.Server.Core.Logging
             {
                 try
                 {
+                    if (!Directory.Exists(settings.Get(HttpServerSettingNames.LogFolder)))
+                    {
+                        Directory.CreateDirectory(settings.Get(HttpServerSettingNames.LogFolder));
+                    }
+
                     this.file = Path.Combine(settings.Get(HttpServerSettingNames.LogFolder), settings.Get(HttpServerSettingNames.LogFileName));
                 }
                 catch (Exception ex)

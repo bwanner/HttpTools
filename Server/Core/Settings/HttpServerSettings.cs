@@ -30,7 +30,7 @@ namespace Batzill.Server.Core.Settings
         private static void LoadDefaultValues()
         {
             HttpServerSettings.defaultValues = new Dictionary<string, string>();
-            foreach (FieldInfo fInfo in typeof(HttpServerSettingDefaults).GetFields())
+            foreach (FieldInfo fInfo in typeof(HttpServerSettingValues).GetFields().Where(x => x.Name.StartsWith("Default")))
             {
                 HttpServerSettings.defaultValues.Add(fInfo.Name.ToLowerInvariant(), (string)fInfo.GetValue(null));
             }

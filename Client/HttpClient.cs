@@ -49,7 +49,7 @@ namespace Batzill.Client
         {
             if (Regex.IsMatch(command, "^curl ", RegexOptions.IgnoreCase))
             {
-                ulong tcpKeepAliveTimeout = 30; // in s
+                ulong tcpKeepAliveTimeout = 0; // in s
                 ulong tcpKeepAliveInterval = 1; // in s
                 ulong idleTimeoutInSec = 3600; // in s
                 string operationType = "GET";
@@ -109,7 +109,10 @@ namespace Batzill.Client
                         stream.Write(rawRequest, 0, rawRequest.Length);
                         stream.Flush();
 
-                        SetKeepAlive(client.Client, tcpKeepAliveTimeout * 1000, tcpKeepAliveInterval * 1000);
+                        if (tcpKeepAliveTimeout > 0)
+                        {
+                            SetKeepAlive(client.Client, tcpKeepAliveTimeout * 1000, tcpKeepAliveInterval * 1000);
+                        }
                         DateTime operationStart = DateTime.Now;
 
                         byte[] buffer = new byte[4096];

@@ -6,8 +6,12 @@ using System.Threading.Tasks;
 
 namespace Batzill.Server.Core.Logging
 {
-    public class FrontendOperationLogger : Logger
+    public class OperationLogger : Logger
     {
+        public string ClientIp
+        {
+            get; private set;
+        }
         public string OperationId
         {
             get; private set;
@@ -18,15 +22,16 @@ namespace Batzill.Server.Core.Logging
             get; private set;
         }
 
-        public FrontendOperationLogger(ILogWriter logWriter, string operationId, string operationName) : base(logWriter)
+        public OperationLogger(ILogWriter logWriter, string clientIp, string operationId, string operationName) : base(logWriter)
         {
+            this.ClientIp = clientIp;
             this.OperationId = operationId;
             this.OperationName = operationName;
         }
 
         public override void Log(EventType type, string message = "")
         {
-            this.logWriter.WriteLog(new FrontendOperationLog(type, this.OperationId, this.OperationName, message));
+            this.logWriter.WriteLog(new OperationLog(type, this.ClientIp, this.OperationId, this.OperationName, message));
         }
     }
 }

@@ -1,11 +1,12 @@
 ﻿using System;
-using System.Text;
 using Batzill.Server.Core.Settings;
 
 namespace Batzill.Server.Core.Logging
 {
-    public class ConsoleLogWriter : ILogWriter
+    public class EventLogWriter : ILogWriter
     {
+        public event EventHandler<Log> LogWritten;
+
         public bool ApplySettings(HttpServerSettings settings)
         {
             return true;
@@ -13,7 +14,10 @@ namespace Batzill.Server.Core.Logging
 
         public void WriteLog(Log log)
         {
-            Console.WriteLine("[{0} | {1}] {2}", log.Timestamp, log.EventType, string.Join(", ", log.ExtendedData));
+            if(this.LogWritten != null)
+            {
+                this.LogWritten.Invoke(this, log);
+            }
         }
     }
 }

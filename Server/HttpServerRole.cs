@@ -37,10 +37,29 @@ namespace Batzill.Server
 
         private static void SetupLogging()
         {
+            HashSet<string> logWriterRequests = new HashSet<string>(
+                HttpServerRole.settingsProvider.Settings.Get(HttpServerSettingNames.LogWriter)
+                .Split(
+                    new string[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries
+                    ));
+
             List<ILogWriter> logWriter = new List<ILogWriter>();
-            logWriter.Add(new ConsoleLogWriter());
-            logWriter.Add(new FrontendOperationLogWriter(new SystemFileWriter(), HttpServerRole.settingsProvider.Settings));
-            logWriter.Add(new FileLogWriter(new SystemFileWriter(), HttpServerRole.settingsProvider.Settings));
+
+            if (logWriterRequests.Contains(HttpServerSettingValues.LogWriterConsole))
+            {
+                HttpServerRole.logger.Log(EventType.ServerSetup, "{0} logging enabled.", HttpServerSettingValues.LogWriterConsole);
+                logWriter.Add(new ConsoleLogWriter());
+            }
+            if(logWriterRequests.Contains(HttpServerSettingValues.LogWriterFile))
+            {
+                HttpServerRole.logger.Log(EventType.ServerSetup, "{0} logging enabled.", HttpServerSettingValues.LogWriterFile);
+                logWriter.Add(new FileLogWriter(new SystemFileWriter(), HttpServerRole.settingsProvider.Settings));
+            }
+            if(logWriterRequests.Contains(HttpServerSettingValues.LogWriterOperation))
+            {
+                HttpServerRole.logger.Log(EventType.ServerSetup, "{0} logging enabled.", HttpServerSettingValues.LogWriterOperation);
+                logWriter.Add(new OperationLogWriter(new SystemFileWriter(), HttpServerRole.settingsProvider.Settings));
+            }
 
             HttpServerRole.logger = new BasicLogger(new MultiLogWriter(logWriter));
         }
@@ -78,7 +97,7 @@ namespace Batzill.Server
 
         private static void SettingsChangedEventHandler(HttpServerSettings settings)
         {
-            HttpServerRole.logger.ApplySettings(settings);
+            HttpServerRole.SetupLogging();
             HttpServerRole.operationFactory.ApplySettings(settings);
             HttpServerRole.httpServer.ApplySettings(settings);
         }

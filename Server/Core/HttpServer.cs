@@ -201,23 +201,30 @@ namespace Batzill.Server.Core
                     context.Request.ProtocolVersion,
                     operationId);
 
-                this.ProcessRequest(operationId, context);
-
-                this.logger.Log(EventType.SystemInformation, "Do a final header sync, stream flush and a close.");
-
-                if (context.SyncAllowed)
+                try
                 {
-                    context.SyncResponse();
-                }
+                    this.ProcessRequest(operationId, context);
 
-                if (context.FlushAllowed)
+                    this.logger.Log(EventType.SystemInformation, "Do a final header sync, stream flush and a close.");
+
+                    if (context.SyncAllowed)
+                    {
+                        context.SyncResponse();
+                    }
+
+                    if (context.FlushAllowed)
+                    {
+                        context.FlushResponse();
+                    }
+
+                    context.CloseResponse();
+
+                    this.logger.Log(EventType.SystemInformation, "Operation '{0}' finished successful.", operationId);
+                }
+                catch(Exception ex)
                 {
-                    context.FlushResponse();
+                    this.logger.Log(EventType.SystemError, "Error executing operation '{0}': {1}", operationId, ex.Message);
                 }
-
-                context.CloseResponse();
-                
-                this.logger.Log(EventType.SystemInformation, "Operation '{0}' finished successful.", operationId);
             });
         }
 
@@ -229,10 +236,16 @@ namespace Batzill.Server.Core
             Operation operation = this.operationFactory.CreateMatchingOperation(context);
 
             // initialize operation
-            FrontendOperationLogger logger = new FrontendOperationLogger(this.logger.logWriter, operationId, operation.Name);
+            OperationLogger logger = new OperationLogger(this.logger.logWriter, context.Request.RemoteEndpoint.Address.ToString(), operationId, operation.Name);
             operation.Initialize(logger, settings.Clone(), operationId);
 
-            logger.Log(EventType.OperationInformation, "Start executing operation: '{0}', id: '{1}'.", operation.Name, operation.ID);
+            logger.Log(
+                EventType.OperationInformation, 
+                "Start executing operation for client '{0}: name: '{1}', id: '{2}', request: '{3}'", 
+                context.Request.RemoteEndpoint.Address, 
+                operation.Name, 
+                operation.ID, 
+                context.Request.RawUrl);
 
             DateTime startTime = DateTime.Now;
 

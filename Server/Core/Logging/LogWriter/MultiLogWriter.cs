@@ -23,25 +23,42 @@ namespace Batzill.Server.Core.Logging
 
         public void Add(ILogWriter logWriter)
         {
-            this.logWriters.Add(logWriter);
+            lock(this.logWriters)
+            {
+                this.logWriters.Add(logWriter);
+            }
+        }
+
+        public void Remove(ILogWriter logWriter)
+        {
+            lock (this.logWriters)
+            {
+                this.logWriters.Remove(logWriter);
+            }
         }
 
         public bool ApplySettings(HttpServerSettings settings)
         {
-            bool result = true;
-            foreach (ILogWriter writer in this.logWriters)
+            lock (this.logWriters)
             {
-                result &= writer.ApplySettings(settings);
-            }
+                bool result = true;
+                foreach (ILogWriter writer in this.logWriters)
+                {
+                    result &= writer.ApplySettings(settings);
+                }
 
-            return result;
+                return result;
+            }
         }
 
         public void WriteLog(Log log)
         {
-            foreach (ILogWriter logWriter in this.logWriters)
+            lock (this.logWriters)
             {
-                logWriter.WriteLog(log);
+                foreach (ILogWriter logWriter in this.logWriters)
+                {
+                    logWriter.WriteLog(log);
+                }
             }
         }
     }

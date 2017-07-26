@@ -15,6 +15,9 @@ namespace Batzill.Server.Core.Settings
         public const string IdleTimeout = "IdleTimeout";
         public const string ConnectionLimit = "ConnectionLimit";
 
+        public const string LogWriter = "LogWriter";
+
+        // logging settings
         public const string LogFolder = "LogFolder";
         public const string LogFileName = "LogFileName";
         public const string LogFolderOperations = "LogFolderOperations";

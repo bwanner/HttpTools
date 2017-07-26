@@ -32,7 +32,7 @@ namespace Batzill.Server.Implementations.HttpClient
                 this.internalResponse.ContentLength64 = this.Response.ContentLength;
                 this.internalResponse.SendChunked = this.Response.SendChuncked;
 
-                this.internalResponse.Cookies = this.Response.Cookies;
+                this.internalResponse.Cookies = this.Response.Cookies;  
 
                 this.internalResponse.Headers.Clear();
                 this.internalResponse.Headers.Add(this.Response.Headers);

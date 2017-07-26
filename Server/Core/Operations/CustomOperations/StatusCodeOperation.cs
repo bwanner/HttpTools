@@ -10,7 +10,7 @@ using Batzill.Server.Core.Settings;
 
 namespace Batzill.Server.Core.Operations
 {
-    public class StatusEchoOperation : Operation
+    public class StatusCodeOperation : Operation
     {
         public const string InputRegex = "^/statuscode/?([0-9]*)$";
 
@@ -26,11 +26,11 @@ namespace Batzill.Server.Core.Operations
         {
             get
             {
-                return "StatusEcho";
+                return "StatusCode";
             }
         }
 
-        public StatusEchoOperation() : base()
+        public StatusCodeOperation() : base()
         {
         }
 
@@ -40,7 +40,7 @@ namespace Batzill.Server.Core.Operations
 
             this.logger.Log(EventType.OperationInformation, "Got request to return given status code, try parsing status code passed by client.");
 
-            Match result = Regex.Match(context.Request.RawUrl, StatusEchoOperation.InputRegex, RegexOptions.IgnoreCase);
+            Match result = Regex.Match(context.Request.RawUrl, StatusCodeOperation.InputRegex, RegexOptions.IgnoreCase);
             if (result.Success && result.Groups.Count == 2 && !string.IsNullOrEmpty(result.Groups[1].Value))
             {
                 if (Int32.TryParse(result.Groups[1].Value, out int statusCode))
@@ -74,7 +74,7 @@ namespace Batzill.Server.Core.Operations
 
         public override bool Match(HttpContext context)
         {
-            return Regex.IsMatch(context.Request.RawUrl, StatusEchoOperation.InputRegex, RegexOptions.IgnoreCase);
+            return Regex.IsMatch(context.Request.RawUrl, StatusCodeOperation.InputRegex, RegexOptions.IgnoreCase);
         }
     }
 }
