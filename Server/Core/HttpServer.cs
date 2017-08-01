@@ -230,7 +230,7 @@ namespace Batzill.Server.Core
 
         private void ProcessRequest(string operationId, HttpContext context)
         {
-            this.logger.Log(EventType.ServerSetup, "Find matching operation for op");
+            this.logger.Log(EventType.OperationLoading, "Find matching operation for request");
 
             // create matching operation
             Operation operation = this.operationFactory.CreateMatchingOperation(context);
@@ -240,7 +240,7 @@ namespace Batzill.Server.Core
             operation.Initialize(logger, settings.Clone(), operationId);
 
             logger.Log(
-                EventType.OperationInformation, 
+                EventType.OperationLoading, 
                 "Start executing operation for client '{0}: name: '{1}', id: '{2}', request: '{3}'", 
                 context.Request.RemoteEndpoint.Address, 
                 operation.Name, 
@@ -251,7 +251,7 @@ namespace Batzill.Server.Core
 
             operation.Execute(context);
 
-            this.logger.Log(EventType.ServerSetup, "Successfully finished operation '{0}' with id '{1}' after {2}s.", operation.Name, operation.ID, (DateTime.Now - startTime).TotalSeconds);
+            this.logger.Log(EventType.OperationLoading, "Successfully finished operation '{0}' with id '{1}' after {2}s.", operation.Name, operation.ID, (DateTime.Now - startTime).TotalSeconds);
         }
     }
 }

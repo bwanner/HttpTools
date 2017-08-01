@@ -35,7 +35,7 @@ namespace Batzill.Server.Core.Logging
 
                     this.file = Path.Combine(settings.Get(HttpServerSettingNames.LogFolder), settings.Get(HttpServerSettingNames.LogFileName));
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     return false;
                 }
