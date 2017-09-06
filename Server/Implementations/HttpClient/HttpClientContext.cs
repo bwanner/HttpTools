@@ -32,10 +32,10 @@ namespace Batzill.Server.Implementations.HttpClient
                 this.internalResponse.ContentLength64 = this.Response.ContentLength;
                 this.internalResponse.SendChunked = this.Response.SendChuncked;
 
-                this.internalResponse.Cookies = this.Response.Cookies;  
-
                 this.internalResponse.Headers.Clear();
                 this.internalResponse.Headers.Add(this.Response.Headers);
+
+                this.internalResponse.Cookies.Add(this.Response.Cookies);
 
                 this.internalResponse.KeepAlive = this.Response.KeepAlive;
 
@@ -49,7 +49,7 @@ namespace Batzill.Server.Implementations.HttpClient
 
         protected override void FlushResponseInternal()
         {
-            // Marke response as started
+            // Mark response as started
             this.responseStarted = true;
 
             this.Response.Stream.Position = 0;

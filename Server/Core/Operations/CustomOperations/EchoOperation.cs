@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Batzill.Server.Core.Logging;
 using Batzill.Server.Core.ObjectModel;
 using Batzill.Server.Core.Settings;
+using System.Net;
 
 namespace Batzill.Server.Core.Operations
 {
@@ -36,18 +37,27 @@ namespace Batzill.Server.Core.Operations
         {
             context.Response.SetDefaultValues();
 
+            // Create response content
             StringBuilder ss = new StringBuilder();
-            ss.AppendFormat("{0} {1} HTTP{2}/{3}", context.Request.HttpMethod, context.Request.RawUrl, (context.Request.IsSecureConnection ? "s" : ""), context.Request.ProtocolVersion);
-            ss.AppendLine();
-            foreach (string header in context.Request.Headers.Keys)
+
+            ss.AppendLine("REQUEST:");
+            ss.AppendFormat("{0} {1} HTTP{2}/{3}{4}", context.Request.HttpMethod, context.Request.RawUrl, (context.Request.IsSecureConnection ? "s" : ""), context.Request.ProtocolVersion, Environment.NewLine);
+
+            if (context.Request.Headers.Keys.Count > 0)
             {
-                ss.AppendLine(string.Format("{0}: {1}", header, context.Request.GetHeaderValue(header)));
+                ss.AppendLine();
+                ss.AppendLine("HEADER:");
+                foreach (string header in context.Request.Headers.Keys)
+                {
+                    ss.AppendLine(string.Format("{0}: {1}", header, context.Request.GetHeaderValue(header)));
+                }
             }
 
             this.logger.Log(EventType.OperationInformation, "HTTP header of operation '{0}':", this.ID);
             this.logger.Log(EventType.OperationInformation, ss.ToString());
 
             context.Response.WriteContent(ss.ToString());
+            context.SyncResponse();
 
             return;
         }

@@ -49,6 +49,7 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Web" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -75,6 +76,7 @@
     <Compile Include="Core\Logging\LogWriter\OperationLogWriter.cs" />
     <Compile Include="Core\Logging\LogWriter\MultiLogWriter.cs" />
     <Compile Include="Core\Operations\CustomOperations\DownloadOperation.cs" />
+    <Compile Include="Core\Operations\CustomOperations\SetCookieOperation.cs" />
     <Compile Include="Core\SSLBindingHelper\ISSLBindingHelper.cs" />
     <Compile Include="Core\SSLBindingHelper\NetshWrapper.cs" />
     <Compile Include="Core\ObjectModel\HttpContext.cs" />
