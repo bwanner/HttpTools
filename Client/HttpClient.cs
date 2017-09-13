@@ -55,10 +55,7 @@ namespace Batzill.Client
                 string operationType = "GET";
                 string protocol = "HTTP/1.1";
 
-                List<string> header = new List<string>()
-                {
-                    "Content-Length: 0"
-                };
+                List<string> header = new List<string>();
                 Uri url = null;
 
                 string parameter = command.Substring(4);
@@ -77,7 +74,7 @@ namespace Batzill.Client
                     }
                 }
 
-                if (Match(parameter, "(http://.*)$", out match))
+                if (Match(parameter, "(https?://.*)$", out match))
                 {
                     string valueAsString = match.Groups[1].Value;
                     try
@@ -98,21 +95,23 @@ namespace Batzill.Client
 
                 // add necessary headers
                 header.Add(string.Format("Host: {0}:{1}", url.Host, url.Port));
+                header.Add(string.Format("Content-Length: 0"));
 
-                string request = CreateHttpRequest(operationType, protocol, url.AbsolutePath, header);
+                string request = CreateHttpRequest(operationType, protocol, url.PathAndQuery, header);
 
                 using (TcpClient client = new TcpClient(url.Host, url.Port))
                 {
                     using (NetworkStream stream = client.GetStream())
                     {
-                        byte[] rawRequest = Encoding.UTF8.GetBytes(request);
-                        stream.Write(rawRequest, 0, rawRequest.Length);
-                        stream.Flush();
-
                         if (tcpKeepAliveTimeout > 0)
                         {
                             SetKeepAlive(client.Client, tcpKeepAliveTimeout * 1000, tcpKeepAliveInterval * 1000);
                         }
+
+                        byte[] rawRequest = Encoding.UTF8.GetBytes(request);
+                        stream.Write(rawRequest, 0, rawRequest.Length);
+                        stream.Flush();
+
                         DateTime operationStart = DateTime.Now;
 
                         byte[] buffer = new byte[4096];
@@ -144,16 +143,21 @@ namespace Batzill.Client
             }
         }
 
-        private static string CreateHttpRequest(string opType, string protocol, string absolutepath, List<string> headers)
+        private static string CreateHttpRequest(string opType, string protocol, string rawPath, List<string> headers, string body = "")
         {
             StringBuilder request = new StringBuilder();
-            request.AppendFormat("{0} {1} {2}\r\n", opType.ToUpperInvariant(), absolutepath, protocol);
+            request.AppendFormat("{0} {1} {2}\r\n", opType.ToUpperInvariant(), rawPath, protocol);
             foreach (string header in headers)
             {
                 request.AppendLine(header);
             }
 
             request.AppendLine();
+
+            if (!string.IsNullOrEmpty(body))
+            {
+                request.AppendLine(body);
+            }
 
             return request.ToString();
         }

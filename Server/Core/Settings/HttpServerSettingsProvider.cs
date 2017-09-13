@@ -74,7 +74,12 @@ namespace Batzill.Server.Core.Settings
 
                         foreach (string line in this.fileReader.ReadLineByLine())
                         {
-                            Match match = Regex.Match(line.TrimEnd(), HttpServerSettingsProvider.RegexSettingsEntry, RegexOptions.IgnoreCase);
+                            if(line == null || line.StartsWith("#"))
+                            {
+                                continue;
+                            }
+
+                            Match match = Regex.Match(line.Trim(), HttpServerSettingsProvider.RegexSettingsEntry, RegexOptions.IgnoreCase);
 
                             if (match.Success)
                             {

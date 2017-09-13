@@ -23,18 +23,15 @@ namespace Batzill.Server.Core
         protected Logger logger;
         protected HttpServerSettings settings;
 
-        protected HttpServer(Logger logger, IOperationFactory operationFactory, TaskFactory factory)
+        protected HttpServer(Logger logger, IOperationFactory operationFactory)
         {
             this.logger = logger;
             this.operationFactory = operationFactory;
-            this.taskfactory = factory;
         }
 
         protected abstract void StartInternal();
         protected abstract void StopInternal();
         protected abstract void ApplySettingsInternal(HttpServerSettings settings);
-
-        protected abstract HttpContext RecieveRequest();
 
         public bool Restart()
         {
@@ -51,14 +48,11 @@ namespace Batzill.Server.Core
                 {
                     this.logger.Log(EventType.SystemInformation, "Attempting to start the HttpServer.");
 
-                    this.logger.Log(EventType.SystemInformation, "Setp 1: Load operations.");
+                    this.logger.Log(EventType.SystemInformation, "Step 1: Load operations.");
                     this.operationFactory.LoadOperations();
 
-                    this.logger.Log(EventType.SystemInformation, "Setp 2: Start listening on bindings.");
+                    this.logger.Log(EventType.SystemInformation, "Step 2: Start internal server.");
                     this.StartInternal();
-
-                    this.logger.Log(EventType.SystemInformation, "Setp 3: Start request management.");
-                    this.Run();
 
                     this.logger.Log(EventType.SystemInformation, "Successfully started the HttpServer.");
 
@@ -122,9 +116,6 @@ namespace Batzill.Server.Core
 
             try
             {
-                // update shared settings first
-                this.ApplyCoreSettings(settings);
-
                 // call update method of child 
                 this.ApplySettingsInternal(settings);
 
@@ -154,78 +145,43 @@ namespace Batzill.Server.Core
             return true;
         }
 
-        private void ApplyCoreSettings(HttpServerSettings settings)
+        protected void HandleRequest(HttpContext context)
         {
-            if (!Int32.TryParse(settings.Get(HttpServerSettingNames.ConnectionLimit), out this.maxConcurrentConnections))
+            string operationId = Guid.NewGuid().ToString();
+
+            this.logger.Log(
+                EventType.SystemInformation,
+                "Recieved new request {0} {1} HTTP{2}/{3} => id: {4}",
+                context.Request.HttpMethod,
+                context.Request.RawUrl,
+                (context.Request.IsSecureConnection ? "s" : ""),
+                context.Request.ProtocolVersion,
+                operationId);
+
+            try
             {
-                this.maxConcurrentConnections = Convert.ToInt32(settings.Default(HttpServerSettingNames.ConnectionLimit));
+                this.ProcessRequest(operationId, context);
+
+                this.logger.Log(EventType.SystemInformation, "Do a final header sync, stream flush and a close.");
+
+                if (context.SyncAllowed)
+                {
+                    context.SyncResponse();
+                }
+
+                if (context.FlushAllowed)
+                {
+                    context.FlushResponse();
+                }
+
+                context.CloseResponse();
+
+                this.logger.Log(EventType.SystemInformation, "Operation '{0}' finished successful.", operationId);
             }
-
-            this.logger.Log(EventType.ServerSetup, "Set ConnectionLimit to {0}.", this.maxConcurrentConnections);
-        }
-
-        protected void Run()
-        {
-            this.mainTask = Task.Run(() =>
-                {
-                    while (this.IsRunning)
-                    {
-                        try
-                        {
-                            this.ManageNextRequest();
-                        }
-                        catch (Exception ex)
-                        {
-                            this.logger.Log(EventType.SystemError, "Error while working on an incoming request! {0}", ex.Message);
-                        }
-                    }
-                });
-        }
-
-        private void ManageNextRequest()
-        {
-            this.logger.Log(EventType.SystemInformation, "Wait for next request.");
-
-            HttpContext context = this.RecieveRequest();
-
-            this.taskfactory.StartNew(() =>
+            catch (Exception ex)
             {
-                string operationId = Guid.NewGuid().ToString();
-
-                this.logger.Log(
-                    EventType.SystemInformation, 
-                    "Recieved new request {0} {1} HTTP{2}/{3} => id: {4}", 
-                    context.Request.HttpMethod, 
-                    context.Request.RawUrl, 
-                    (context.Request.IsSecureConnection ? "s" : ""), 
-                    context.Request.ProtocolVersion,
-                    operationId);
-
-                try
-                {
-                    this.ProcessRequest(operationId, context);
-
-                    this.logger.Log(EventType.SystemInformation, "Do a final header sync, stream flush and a close.");
-
-                    if (context.SyncAllowed)
-                    {
-                        context.SyncResponse();
-                    }
-
-                    if (context.FlushAllowed)
-                    {
-                        context.FlushResponse();
-                    }
-
-                    context.CloseResponse();
-
-                    this.logger.Log(EventType.SystemInformation, "Operation '{0}' finished successful.", operationId);
-                }
-                catch(Exception ex)
-                {
-                    this.logger.Log(EventType.SystemError, "Error executing operation '{0}': {1}", operationId, ex.Message);
-                }
-            });
+                this.logger.Log(EventType.SystemError, "Error executing operation '{0}': {1}", operationId, ex.Message);
+            }
         }
 
         private void ProcessRequest(string operationId, HttpContext context)

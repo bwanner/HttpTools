@@ -81,7 +81,6 @@ namespace Batzill.Server
             HttpServerRole.httpServer = new HttpClientServer(
                 HttpServerRole.logger,
                 HttpServerRole.operationFactory,
-                new TaskFactory(), 
                 HttpServerRole.settingsProvider.Settings,
                 new NetshWrapper(HttpServerRole.logger));
         }

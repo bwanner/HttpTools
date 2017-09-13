@@ -53,6 +53,7 @@ namespace Batzill.Server.Core.Operations
 
             context.Response.SetDefaultValues();
             context.Response.SendChuncked = true;
+            context.Response.SetHeaderValue("Content-Type", "text/event-stream");
             context.SyncResponse();
 
 

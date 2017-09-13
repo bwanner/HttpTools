@@ -16,9 +16,12 @@ namespace Batzill.Server.Core.Operations
         /// <summary>
         /// Group[2]: size
         /// Group[3]: unit
+        /// Group[6]: chunksize
         /// </summary>
-        private const string InputRegex = @"^\/download\/?(([0-9]+)(b|kb|mb|gb|)?)?$";
+        private const string InputRegex = @"^\/download\/?(([0-9]+)(b|kb|mb|gb|)?)?(\?chunked(=([0-9]+))?)?$";
         private static Random Random = new Random((int)(DateTime.Now.Ticks % int.MaxValue));
+
+        private const int DefaultChunkSize = 8192;
 
         public override int Priority
         {
@@ -46,7 +49,7 @@ namespace Batzill.Server.Core.Operations
 
             this.logger.Log(EventType.OperationInformation, "Got request to download data, try parsing size passed by client.");
 
-            Match result = Regex.Match(context.Request.RawUrl, DownloadOperation.InputRegex, RegexOptions.IgnoreCase);
+            Match result = Regex.Match(context.Request.Url.PathAndQuery, DownloadOperation.InputRegex, RegexOptions.IgnoreCase);
             if (result.Success && !string.IsNullOrEmpty(result.Groups[1].Value))
             {
                 if (Int64.TryParse(result.Groups[2].Value, out long inputNumber))
@@ -80,16 +83,40 @@ namespace Batzill.Server.Core.Operations
                         return;
                     }
 
-                    this.logger.Log(EventType.OperationInformation, "Will file of size {0}{1}.", inputNumber, requestedUnit);
-                    
+                    bool chunked = !string.IsNullOrEmpty(result.Groups[4].Value);
+                    long chunkSize = DownloadOperation.DefaultChunkSize;
+
+                    if (chunked && !string.IsNullOrEmpty(result.Groups[6].Value))
+                    {
+                        if(!Int64.TryParse(result.Groups[6].Value, out chunkSize) || chunkSize < 1)
+                        {
+                            this.logger.Log(EventType.OperationError, "Unable to parse chunk size '{0}' to long.", result.Groups[1].Value);
+                            context.Response.WriteContent(string.Format("Unable to parse chunk size '{0}' to long.", result.Groups[1].Value));
+
+                            return;
+                        }
+
+                        chunkSize = Math.Min(chunkSize, requestedDownloadSize);
+                    }
+
+                    this.logger.Log(EventType.OperationInformation, "Will return file of size {0}{1} ({2}).", inputNumber, requestedUnit, chunked ? "chunked" : "one part");
+
                     context.Response.SetHeaderValue("Content-Type", "application/octet-stream");
                     context.Response.SetHeaderValue("Content-Disposition", String.Format("attachment;filename=\"TestFile_{0}{1}.file\"", inputNumber, requestedUnit));
-                    context.Response.ContentLength = requestedDownloadSize;
 
-                    // sunc response before sending
+                    if (!chunked)
+                    {
+                        context.Response.ContentLength = requestedDownloadSize;
+                    }
+                    else
+                    {
+                        context.Response.SendChuncked = true;
+                    }
+
+                    // sync response before sending
                     context.SyncResponse();
 
-                    long bufferSize = 1024, bytesSend = 0;
+                    long bufferSize = chunkSize, bytesSend = 0;
                     byte[] data = new byte[bufferSize];
                     while (bytesSend < requestedDownloadSize)
                     {
@@ -111,8 +138,6 @@ namespace Batzill.Server.Core.Operations
 
                 context.Response.WriteContent("Call '/download/[number](unit)' to have the server return [number] (unit=b/kb/mb/gb, default b) of data. (Max 32GB)");
             }
-
-            return;
         }
 
         public override bool Match(HttpContext context)

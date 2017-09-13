@@ -53,6 +53,13 @@ namespace Batzill.Server.Core.Operations
                 }
             }
 
+            if(!string.IsNullOrEmpty(context.Request.Url.Query))
+            {
+                ss.AppendLine();
+                ss.AppendLine("QUERY");
+                ss.AppendLine(context.Request.Url.Query);
+            }
+
             this.logger.Log(EventType.OperationInformation, "HTTP header of operation '{0}':", this.ID);
             this.logger.Log(EventType.OperationInformation, ss.ToString());
 

@@ -9,11 +9,14 @@ using Batzill.Server.Implementations.HttpClient;
 using System.Text.RegularExpressions;
 using System.Collections.Generic;
 using Batzill.Server.Core.SSLBindingHelper;
+using System.Threading;
 
 namespace Batzill.Server
 {
     public class HttpClientServer : HttpServer
     {
+        private static int InitialConcurrentConnections = 1;
+
         private static List<string> AlternateHostNames = new List<string>()
         {
             "127.0.0.1",
@@ -24,11 +27,14 @@ namespace Batzill.Server
         private HttpListener listener;
         private ISSLBindingHelper sslBindingHelper;
 
-        public HttpClientServer(Logger logger, IOperationFactory operationFactory, TaskFactory taskFactory, HttpServerSettings settings, ISSLBindingHelper sslBindingHelper)
-            : base(logger, operationFactory, taskFactory)
+        private Semaphore semaphore;
+
+        public HttpClientServer(Logger logger, IOperationFactory operationFactory, HttpServerSettings settings, ISSLBindingHelper sslBindingHelper)
+            : base(logger, operationFactory)
         {
             this.listener = new HttpListener();
             this.sslBindingHelper = sslBindingHelper;
+            this.semaphore = new Semaphore(HttpClientServer.InitialConcurrentConnections, HttpClientServer.InitialConcurrentConnections);
 
             this.ApplySettings(settings);
         }
@@ -44,24 +50,40 @@ namespace Batzill.Server
         protected override void StartInternal()
         {
             this.listener.Start();
+
+            Task.Run(() =>
+            {
+                while(this.IsRunning)
+                {
+                    this.semaphore.WaitOne();
+                    this.listener.BeginGetContext(new AsyncCallback(ListenerCallback), this.listener);
+                }
+            });
+        }
+
+        private void ListenerCallback(IAsyncResult result)
+        {
+            HttpListener listener = (HttpListener)result.AsyncState;
+            HttpListenerContext context = (result.AsyncState as HttpListener).EndGetContext(result);
+
+            // realease semaphore after ending getcontext operation and before proceeding with request
+            this.semaphore.Release();
+            
+            this.HandleRequest(new HttpClientContext(context.Request, context.Response));
         }
 
         protected override void StopInternal()
         {
             this.listener.Stop();
+            this.semaphore.Close();
         }
 
         protected override void ApplySettingsInternal(HttpServerSettings settings)
         {
             this.ApplyEndpoints(settings);
-            this.ApplyTimeouts(settings);
+            this.ApplyLimits(settings);
         }
 
-        protected override HttpContext RecieveRequest()
-        {
-            HttpListenerContext context = this.listener.GetContext();
-            return new HttpClientContext(context.Request, context.Response);
-        }
 
         private bool ApplyEndpoints(HttpServerSettings settings)
         {
@@ -128,7 +150,7 @@ namespace Batzill.Server
             return true;
         }
 
-        private bool ApplyTimeouts(HttpServerSettings settings)
+        private bool ApplyLimits(HttpServerSettings settings)
         {
             if (!Int32.TryParse(settings.Get(HttpServerSettingNames.IdleTimeout), out int idleTimeout))
             {
@@ -137,6 +159,15 @@ namespace Batzill.Server
             this.listener.TimeoutManager.IdleConnection = new TimeSpan(0, 0, idleTimeout);
 
             this.logger.Log(EventType.ServerSetup, "Set idle timeout to {0}s.", idleTimeout);
+
+            if (!Int32.TryParse(settings.Get(HttpServerSettingNames.ConnectionLimit), out int maxConcurrentConnections))
+            {
+                idleTimeout = Int32.Parse(settings.Default(HttpServerSettingNames.ConnectionLimit));
+            }
+            // server got stopped before settings update, save to reinitialize the semaphore.
+            this.semaphore = new Semaphore(maxConcurrentConnections, maxConcurrentConnections);
+
+            this.logger.Log(EventType.ServerSetup, "Set ConnectionLimit to {0}.", maxConcurrentConnections);
 
             return true;
         }
