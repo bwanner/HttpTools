@@ -18,10 +18,10 @@ namespace Batzill.Server.Core.Operations
         /// Group[3]: unit
         /// Group[6]: chunksize
         /// </summary>
-        private const string InputRegex = @"^\/download\/?(([0-9]+)(b|kb|mb|gb|)?)?(\?chunked(=([0-9]+))?)?$";
+        private const string InputRegex = @"^\/download\/?(([0-9]+)(b|kb|mb|gb|)?)?(\?buffersize(=([0-9]+))?(&chunked)?(&wait)?)?$";
         private static Random Random = new Random((int)(DateTime.Now.Ticks % int.MaxValue));
 
-        private const int DefaultChunkSize = 8192;
+        private const int DefaultBufferSize = 8192;
 
         public override int Priority
         {
@@ -83,47 +83,50 @@ namespace Batzill.Server.Core.Operations
                         return;
                     }
 
-                    bool chunked = !string.IsNullOrEmpty(result.Groups[4].Value);
-                    long chunkSize = DownloadOperation.DefaultChunkSize;
-
-                    if (chunked && !string.IsNullOrEmpty(result.Groups[6].Value))
+                    int bufferSize = DownloadOperation.DefaultBufferSize;
+                    if (!string.IsNullOrEmpty(result.Groups[6].Value))
                     {
-                        if(!Int64.TryParse(result.Groups[6].Value, out chunkSize) || chunkSize < 1)
+                        if(!Int32.TryParse(result.Groups[6].Value, out bufferSize) || bufferSize < 1)
                         {
                             this.logger.Log(EventType.OperationError, "Unable to parse chunk size '{0}' to long.", result.Groups[1].Value);
                             context.Response.WriteContent(string.Format("Unable to parse chunk size '{0}' to long.", result.Groups[1].Value));
 
                             return;
                         }
-
-                        chunkSize = Math.Min(chunkSize, requestedDownloadSize);
                     }
+                    
+                    bool chunked = !string.IsNullOrEmpty(result.Groups[7].Value);
+                    bool wait = !string.IsNullOrEmpty(result.Groups[8].Value);
 
-                    this.logger.Log(EventType.OperationInformation, "Will return file of size {0}{1} ({2}).", inputNumber, requestedUnit, chunked ? "chunked" : "one part");
+                    this.logger.Log(EventType.OperationInformation, "Will return file of size: {0}{1}, bufferSize: '{2}', chunked: '{3}', wait: '{4}'.", inputNumber, requestedUnit, bufferSize , chunked, wait);
 
                     context.Response.SetHeaderValue("Content-Type", "application/octet-stream");
                     context.Response.SetHeaderValue("Content-Disposition", String.Format("attachment;filename=\"TestFile_{0}{1}.file\"", inputNumber, requestedUnit));
 
-                    if (!chunked)
+                    if (chunked)
                     {
-                        context.Response.ContentLength = requestedDownloadSize;
+                        context.Response.SendChuncked = true;
                     }
                     else
                     {
-                        context.Response.SendChuncked = true;
+                        context.Response.ContentLength = requestedDownloadSize;
                     }
 
                     // sync response before sending
                     context.SyncResponse();
-
-                    long bufferSize = chunkSize, bytesSend = 0;
-                    byte[] data = new byte[bufferSize];
+                    
+                    long bytesSend = 0;
+                    byte[] data = Encoding.ASCII.GetBytes(new string('a', (int)bufferSize));
                     while (bytesSend < requestedDownloadSize)
                     {
-                        Random.NextBytes(data);
                         context.Response.Stream.Write(data, 0, (int)Math.Min(bufferSize, requestedDownloadSize - bytesSend));
                         context.FlushResponse();
                         bytesSend += bufferSize;
+
+                        if(wait)
+                        {
+                            Thread.Sleep(1000);
+                        }
                     }
                 }
                 else

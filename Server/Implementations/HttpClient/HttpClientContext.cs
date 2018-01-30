@@ -23,28 +23,24 @@ namespace Batzill.Server.Implementations.HttpClient
 
         protected override void SyncResponseInternal()
         {
-            // Can't sync settings after response started (these are header values!)
-            if (!this.responseStarted)
-            {
-                this.internalResponse.ContentEncoding = this.Response.ContentEncoding;
-                this.internalResponse.ContentType = this.Response.ContentType;
+            this.internalResponse.ContentEncoding = this.Response.ContentEncoding;
+            this.internalResponse.ContentType = this.Response.ContentType;
 
-                this.internalResponse.ContentLength64 = this.Response.ContentLength;
-                this.internalResponse.SendChunked = this.Response.SendChuncked;
+            this.internalResponse.ContentLength64 = this.Response.ContentLength;
+            this.internalResponse.SendChunked = this.Response.SendChuncked;
 
-                this.internalResponse.Headers.Clear();
-                this.internalResponse.Headers.Add(this.Response.Headers);
+            this.internalResponse.Headers.Clear();
+            this.internalResponse.Headers.Add(this.Response.Headers);
 
-                this.internalResponse.Cookies.Add(this.Response.Cookies);
+            this.internalResponse.Cookies.Add(this.Response.Cookies);
 
-                this.internalResponse.KeepAlive = this.Response.KeepAlive;
+            this.internalResponse.KeepAlive = this.Response.KeepAlive;
 
-                this.internalResponse.ProtocolVersion = this.Response.ProtocolVersion;
-                this.internalResponse.RedirectLocation = this.Response.RedirectLocation;
+            this.internalResponse.ProtocolVersion = this.Response.ProtocolVersion;
+            this.internalResponse.RedirectLocation = this.Response.RedirectLocation;
 
-                this.internalResponse.StatusCode = this.Response.StatusCode;
-                this.internalResponse.StatusDescription = this.Response.StatusDescription;
-            }
+            this.internalResponse.StatusCode = this.Response.StatusCode;
+            this.internalResponse.StatusDescription = this.Response.StatusDescription;
         }
 
         protected override void FlushResponseInternal()
