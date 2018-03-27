@@ -40,8 +40,21 @@ namespace Batzill.Server.Core.Operations
             // Create response content
             StringBuilder ss = new StringBuilder();
 
+            ss.AppendLine("ENDPOINT INFORMATION:");
+            ss.AppendFormat("IP: '{0}'{1}", context.Request.LocalEndpoint.Address, Environment.NewLine);
+            ss.AppendFormat("PORT: '{0}'{1}", context.Request.LocalEndpoint.Port, Environment.NewLine);
+            ss.AppendFormat("HOST: '{0}'{1}", context.Request.UserHostName, Environment.NewLine);
+
+
+            if (context.Request.IsSecureConnection)
+            {
+                ss.AppendLine();
+                ss.AppendLine("SECURE CONNECTION");
+            }
+
+            ss.AppendLine();
             ss.AppendLine("REQUEST:");
-            ss.AppendFormat("{0} {1} HTTP{2}/{3}{4}", context.Request.HttpMethod, context.Request.RawUrl, (context.Request.IsSecureConnection ? "s" : ""), context.Request.ProtocolVersion, Environment.NewLine);
+            ss.AppendFormat("{0} {1} HTTP/{2}{3}", context.Request.HttpMethod, context.Request.RawUrl, context.Request.ProtocolVersion, Environment.NewLine);
 
             if (context.Request.Headers.Keys.Count > 0)
             {
@@ -60,7 +73,7 @@ namespace Batzill.Server.Core.Operations
                 ss.AppendLine(context.Request.Url.Query);
             }
 
-            this.logger.Log(EventType.OperationInformation, "HTTP header of operation '{0}':", this.ID);
+            this.logger.Log(EventType.OperationInformation, "HTTP Details for operation '{0}':", this.ID);
             this.logger.Log(EventType.OperationInformation, ss.ToString());
 
             context.Response.WriteContent(ss.ToString());

@@ -24,7 +24,7 @@ namespace Batzill.Server.Core
             this.ApplySettings(settings);
         }
 
-        public void LoadOperations()
+        public void LoadOperations(HttpServerSettings settings)
         {
             lock (this.operations)
             {
@@ -47,13 +47,17 @@ namespace Batzill.Server.Core
 
                         Operation operation = this.CreateInstance(operationType);
 
-                        this.logger.Log(EventType.OperationLoading, "Operation loaded: Name: '{0}', Priority: '{1}'.", operation.Name, operation.Priority);
+                        this.logger.Log(EventType.OperationLoading, "Attempting to initialize operation '{0}'.", operation.Name);
+
+                        operation.InitializeClass(this.logger, settings);
+
+                        this.logger.Log(EventType.OperationLoading, "Operation loaded. Name: '{0}', Priority: '{1}'.", operation.Name, operation.Priority);
 
                         this.operations.Add(operation);
                     }
                     catch (Exception ex)
                     {
-                        this.logger.Log(EventType.OperationLoadingError, "An error occured while instanciating operationType '{0}': {1}", operationType, ex.ToString());
+                        this.logger.Log(EventType.OperationLoadingError, "An error occured while instanciating/initializing operationType '{0}': {1}", operationType, ex.ToString());
                     }
                 }
 

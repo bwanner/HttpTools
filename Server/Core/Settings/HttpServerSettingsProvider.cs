@@ -74,7 +74,7 @@ namespace Batzill.Server.Core.Settings
 
                         foreach (string line in this.fileReader.ReadLineByLine())
                         {
-                            if(line == null || line.StartsWith("#"))
+                            if(string.IsNullOrEmpty(line) || line.StartsWith("#"))
                             {
                                 continue;
                             }

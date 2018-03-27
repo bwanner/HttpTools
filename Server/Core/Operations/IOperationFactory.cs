@@ -12,6 +12,6 @@ namespace Batzill.Server.Core
     public interface IOperationFactory : ISettingsChangable
     {
         Operation CreateMatchingOperation(HttpContext context);
-        void LoadOperations();
+        void LoadOperations(HttpServerSettings settings);
     }
 }

@@ -10,6 +10,7 @@ namespace Batzill.Server.Core.Settings
 
         public const string DefaultIdleTimeout = "60";
         public const string DefaultConnectionLimit = "20";
+        public const string DefaultHttpKeepAlive = "true";
 
         public const string DefaultLogWriter = HttpServerSettingValues.LogWriterConsole;
         public const string LogWriterConsole = "Console";

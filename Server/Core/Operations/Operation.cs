@@ -40,12 +40,25 @@ namespace Batzill.Server.Core
         {
         }
 
+        /// <summary>
+        /// Used to initialize the operation before Executing.
+        /// </summary>
+        /// <param name="logger">The logger instance.</param>
+        /// <param name="settings">The settings.</param>
+        /// <param name="operationId">The Id of the operation</param>
         public void Initialize(Logger logger, HttpServerSettings settings, string operationId)
         {
             this.logger = logger;
             this.settings = settings.Clone();
             this.ID = operationId;
         }
+
+        /// <summary>
+        /// Used to initialize static properties at the beginning of the operation.
+        /// </summary>
+        /// <param name="logger">The logger instance.</param>
+        /// <param name="settings">The settings.</param>
+        public virtual void InitializeClass(Logger logger, HttpServerSettings settings) { }
 
         public abstract bool Match(HttpContext context);
         public abstract void Execute(HttpContext context);

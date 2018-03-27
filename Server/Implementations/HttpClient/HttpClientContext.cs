@@ -13,12 +13,9 @@ namespace Batzill.Server.Implementations.HttpClient
     {
         public HttpListenerResponse internalResponse;
 
-        private bool responseStarted;
-
         public HttpClientContext(HttpListenerRequest request, HttpListenerResponse response) : base(HttpClientContext.ConvertRequest(request))
         {
             this.internalResponse = response;
-            this.responseStarted = false;
         }
 
         protected override void SyncResponseInternal()
@@ -45,9 +42,6 @@ namespace Batzill.Server.Implementations.HttpClient
 
         protected override void FlushResponseInternal()
         {
-            // Mark response as started
-            this.responseStarted = true;
-
             this.Response.Stream.Position = 0;
             this.Response.Stream.CopyTo(this.internalResponse.OutputStream);
 
@@ -60,6 +54,7 @@ namespace Batzill.Server.Implementations.HttpClient
 
         protected override void CloseResponseInternal()
         {
+            this.internalResponse.OutputStream.Close();
             this.internalResponse.Close();
         }
 
@@ -90,7 +85,14 @@ namespace Batzill.Server.Implementations.HttpClient
                 IsSecureConnection = request.IsSecureConnection,
                 LocalEndpoint = request.LocalEndPoint,
                 RemoteEndpoint = request.RemoteEndPoint,
-                Url = request.Url
+                Url = request.Url,
+                UserHostName = request.UserHostName,
+                ContentEncoding = request.ContentEncoding,
+                ContentLength = request.ContentLength64,
+                ContentType = request.ContentType,
+                KeepAlive = request.KeepAlive,
+                RequestTraceIdentifier = request.RequestTraceIdentifier.ToString(),
+                UserAgent = request.UserAgent
             };
         }
     }

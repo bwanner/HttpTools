@@ -29,6 +29,8 @@ namespace Batzill.Server
 
         private Semaphore semaphore;
 
+        private bool httpKeepAlive;
+
         public HttpClientServer(Logger logger, IOperationFactory operationFactory, HttpServerSettings settings, ISSLBindingHelper sslBindingHelper)
             : base(logger, operationFactory)
         {
@@ -64,12 +66,16 @@ namespace Batzill.Server
         private void ListenerCallback(IAsyncResult result)
         {
             HttpListener listener = (HttpListener)result.AsyncState;
-            HttpListenerContext context = (result.AsyncState as HttpListener).EndGetContext(result);
+            HttpListenerContext httpListenerContext = (result.AsyncState as HttpListener).EndGetContext(result);
 
             // realease semaphore after ending getcontext operation and before proceeding with request
             this.semaphore.Release();
-            
-            this.HandleRequest(new HttpClientContext(context.Request, context.Response));
+
+            // Prepare Context
+            HttpClientContext context = new HttpClientContext(httpListenerContext.Request, httpListenerContext.Response);
+            context.Response.KeepAlive = this.httpKeepAlive;
+
+            this.HandleRequest(context);
         }
 
         protected override void StopInternal()
@@ -85,7 +91,7 @@ namespace Batzill.Server
         }
 
 
-        private bool ApplyEndpoints(HttpServerSettings settings)
+        private void ApplyEndpoints(HttpServerSettings settings)
         {
             this.logger.Log(EventType.ServerSetup, "Set endpoints passed in settings.");
 
@@ -122,7 +128,7 @@ namespace Batzill.Server
                             string bindingHost = HttpClientServer.AlternateHostNames.Contains(host) ? this.sslBindingHelper.DefaultEndpointHost  : host;
                             if (!this.sslBindingHelper.TryAddOrUpdateCertBinding(certThumbprint, ServiceConstants.ApplicationId, port, bindingHost))
                             {
-                                this.logger.Log(EventType.SettingInvalid, "Skipping endpoint '{0}', unable bind certificate '{1}'.", endpoint, certThumbprint);
+                                this.logger.Log(EventType.SettingInvalid, "Skipping endpoint '{0}', unable to bind certificate '{1}'.", endpoint, certThumbprint);
                                 continue;
                             }
                         }
@@ -146,30 +152,40 @@ namespace Batzill.Server
                 this.logger.Log(EventType.SettingInvalid, "Settings file did not contain any valid endpoints!");
                 throw new ArgumentException("Settings file did not contain any valid endpoints!");
             }
-
-            return true;
         }
 
-        private bool ApplyLimits(HttpServerSettings settings)
+        private void ApplyLimits(HttpServerSettings settings)
         {
+            /* IdleTimeout */
             if (!Int32.TryParse(settings.Get(HttpServerSettingNames.IdleTimeout), out int idleTimeout))
             {
-                idleTimeout = Int32.Parse(settings.Default(HttpServerSettingNames.IdleTimeout));
+                this.logger.Log(EventType.SettingsParsingError, "Unable to parse IdleTimeout '{0}'.", settings.Get(HttpServerSettingNames.IdleTimeout));
+                throw new ArgumentException("IdleTimeout");
             }
             this.listener.TimeoutManager.IdleConnection = new TimeSpan(0, 0, idleTimeout);
 
             this.logger.Log(EventType.ServerSetup, "Set idle timeout to {0}s.", idleTimeout);
 
+            /* ConnectionLimit */
             if (!Int32.TryParse(settings.Get(HttpServerSettingNames.ConnectionLimit), out int maxConcurrentConnections))
             {
-                idleTimeout = Int32.Parse(settings.Default(HttpServerSettingNames.ConnectionLimit));
+                this.logger.Log(EventType.SettingsParsingError, "Unable to parse ConnectionLimit '{0}'.", settings.Get(HttpServerSettingNames.ConnectionLimit));
+                throw new ArgumentException("ConnectionLimit");
             }
             // server got stopped before settings update, save to reinitialize the semaphore.
             this.semaphore = new Semaphore(maxConcurrentConnections, maxConcurrentConnections);
 
-            this.logger.Log(EventType.ServerSetup, "Set ConnectionLimit to {0}.", maxConcurrentConnections);
+            this.logger.Log(EventType.ServerSetup, "Set ConnectionLimit to '{0}'.", maxConcurrentConnections);
 
-            return true;
+            /* HttpKeepAlive */
+            if (!bool.TryParse(settings.Get(HttpServerSettingNames.HttpKeepAlive), out bool httpKeepAlive))
+            {
+                this.logger.Log(EventType.SettingsParsingError, "Unable to parse HttpKeepAlive '{0}'.", settings.Get(HttpServerSettingNames.HttpKeepAlive));
+                throw new ArgumentException("HttpKeepAlive");
+            }
+            this.httpKeepAlive = httpKeepAlive;
+
+            this.logger.Log(EventType.ServerSetup, "Set HttpKeepAlive to '{0}'.", httpKeepAlive);
         }
     }
 }

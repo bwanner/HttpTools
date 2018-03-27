@@ -89,6 +89,16 @@ namespace Batzill.Server.Core.Settings
             return null;
         }
 
+        public IEnumerable<string> GetAll(string name, bool checkDefault = true)
+        {
+            return this.Get(name, checkDefault)?.Split(
+                new string[]
+                {
+                    Environment.NewLine
+                },
+                StringSplitOptions.RemoveEmptyEntries);
+        }
+
         public string Default(string name)
         {
             name = this.PrepareDefaultName(name);

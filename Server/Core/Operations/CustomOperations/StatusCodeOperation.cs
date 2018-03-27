@@ -12,7 +12,7 @@ namespace Batzill.Server.Core.Operations
 {
     public class StatusCodeOperation : Operation
     {
-        public const string InputRegex = "^/statuscode/?([0-9]*)$";
+        public const string InputRegex = "^/statuscode/([0-9]*)$";
 
         public override int Priority
         {
@@ -45,7 +45,7 @@ namespace Batzill.Server.Core.Operations
             {
                 if (Int32.TryParse(result.Groups[1].Value, out int statusCode))
                 {
-                    if (statusCode < 100 || statusCode > 600)
+                    if (statusCode < 100 || statusCode > 999)
                     {
                         this.logger.Log(EventType.OperationInformation, "Client passed invalid status code '{0}'.", statusCode);
                         context.Response.WriteContent(string.Format("Invalid status code '{0}'.", statusCode));
@@ -67,7 +67,6 @@ namespace Batzill.Server.Core.Operations
                 this.logger.Log(EventType.OperationInformation, "No number passed, return info page.");
                 context.Response.WriteContent("Call '/statuscode/[number]' (100 <= number < 600) to have to server return [number] as status code.");
             }
-
 
             return;
         }

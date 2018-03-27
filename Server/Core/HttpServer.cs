@@ -49,7 +49,7 @@ namespace Batzill.Server.Core
                     this.logger.Log(EventType.SystemInformation, "Attempting to start the HttpServer.");
 
                     this.logger.Log(EventType.SystemInformation, "Step 1: Load operations.");
-                    this.operationFactory.LoadOperations();
+                    this.operationFactory.LoadOperations(this.settings);
 
                     this.logger.Log(EventType.SystemInformation, "Step 2: Start internal server.");
                     this.StartInternal();
@@ -162,25 +162,34 @@ namespace Batzill.Server.Core
             {
                 this.ProcessRequest(operationId, context);
 
-                this.logger.Log(EventType.SystemInformation, "Do a final header sync, stream flush and a close.");
-
-                if (context.SyncAllowed)
-                {
-                    context.SyncResponse();
-                }
-
-                if (context.FlushAllowed)
-                {
-                    context.FlushResponse();
-                }
-
-                context.CloseResponse();
-
-                this.logger.Log(EventType.SystemInformation, "Operation '{0}' finished successful.", operationId);
+                this.logger.Log(EventType.SystemInformation, "Operation '{0}' finished successfully.", operationId);
             }
             catch (Exception ex)
             {
                 this.logger.Log(EventType.SystemError, "Error executing operation '{0}': {1}", operationId, ex.Message);
+            }
+            finally
+            {
+                try
+                {
+                    this.logger.Log(EventType.SystemInformation, "Do a final header sync, stream flush and close the connection.");
+
+                    if (context.SyncAllowed)
+                    {
+                        context.SyncResponse();
+                    }
+
+                    if (context.FlushAllowed)
+                    {
+                        context.FlushResponse();
+                    }
+
+                    context.CloseResponse();
+                }
+                catch (Exception ex)
+                {
+                    this.logger.Log(EventType.SystemError, "Error finishing up operation '{0}': {1}", operationId, ex.Message);
+                }
             }
         }
 
