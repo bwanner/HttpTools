@@ -49,7 +49,7 @@ namespace Batzill.Server.Core.Operations
             {
                 this.logger.Log(EventType.OperationInformation, "No redirect target passed, return info page.");
 
-                context.Response.WriteContent("Call '/redirect/[address]' to have to server redirect the call to [address].");
+                context.Response.WriteContent("Call '/redirect/[path]' to have to server redirect the call to [path].");
             }
 
             return;

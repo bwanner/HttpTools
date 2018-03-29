@@ -14,7 +14,7 @@ namespace Batzill.Server.Core.Operations
 {
     public class SetCookieOperation : Operation
     {
-        private const string InputRegex = "^/SetCookie";
+        private const string InputRegex = "^/SetCookie$";
 
         public override int Priority
         {

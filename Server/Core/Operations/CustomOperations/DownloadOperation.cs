@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -18,10 +19,11 @@ namespace Batzill.Server.Core.Operations
         /// Group[3]: unit
         /// Group[6]: chunksize
         /// </summary>
-        private const string InputRegex = @"^\/download\/?(([0-9]+)(b|kb|mb|gb|)?)?(\?buffersize(=([0-9]+))?(&chunked)?(&wait)?)?$";
+        private const string InputRegex = @"^\/download\/?(([0-9]+)(b|kb|mb|gb|)?)$";
         private static Random Random = new Random((int)(DateTime.Now.Ticks % int.MaxValue));
 
         private const int DefaultBufferSize = 8192;
+        private const int DefaultWaitTimeInMs = -1;
 
         public override int Priority
         {
@@ -49,11 +51,12 @@ namespace Batzill.Server.Core.Operations
 
             this.logger.Log(EventType.OperationInformation, "Got request to download data, try parsing size passed by client.");
 
-            Match result = Regex.Match(context.Request.Url.PathAndQuery, DownloadOperation.InputRegex, RegexOptions.IgnoreCase);
+            Match result = Regex.Match(context.Request.RawUrl, DownloadOperation.InputRegex, RegexOptions.IgnoreCase);
             if (result.Success && !string.IsNullOrEmpty(result.Groups[1].Value))
             {
                 if (Int64.TryParse(result.Groups[2].Value, out long inputNumber))
                 {
+                    /* Parse download size in path */
                     string requestedUnit = string.IsNullOrEmpty(result.Groups[3].Value) ? "b" : result.Groups[3].Value;
                     long requestedDownloadSize = inputNumber;
                     switch(requestedUnit.ToLowerInvariant())
@@ -83,22 +86,36 @@ namespace Batzill.Server.Core.Operations
                         return;
                     }
 
+                    /* Parse input parameters in query */
+                    NameValueCollection parameters = System.Web.HttpUtility.ParseQueryString(context.Request.Url.Query);
+
                     int bufferSize = DownloadOperation.DefaultBufferSize;
-                    if (!string.IsNullOrEmpty(result.Groups[6].Value))
+                    if (!string.IsNullOrEmpty(parameters["bufferSize"]))
                     {
-                        if(!Int32.TryParse(result.Groups[6].Value, out bufferSize) || bufferSize < 1)
+                        if(!Int32.TryParse(parameters["bufferSize"], out bufferSize) || bufferSize < 1 || bufferSize > 33554432)
                         {
-                            this.logger.Log(EventType.OperationError, "Unable to parse chunk size '{0}' to long.", result.Groups[1].Value);
-                            context.Response.WriteContent(string.Format("Unable to parse chunk size '{0}' to long.", result.Groups[1].Value));
+                            this.logger.Log(EventType.OperationError, "Unable to parse chunk size '{0}' to long.", parameters["bufferSize"]);
+                            context.Response.WriteContent(string.Format("Unable to parse chunk size '{0}' to long.  Please provide the chunk size in number of bytes within [1, 32MB]", parameters["bufferSize"]));
 
                             return;
                         }
                     }
-                    
-                    bool chunked = !string.IsNullOrEmpty(result.Groups[7].Value);
-                    bool wait = !string.IsNullOrEmpty(result.Groups[8].Value);
 
-                    this.logger.Log(EventType.OperationInformation, "Will return file of size: {0}{1}, bufferSize: '{2}', chunked: '{3}', wait: '{4}'.", inputNumber, requestedUnit, bufferSize , chunked, wait);
+                    int waitTime = DownloadOperation.DefaultWaitTimeInMs;
+                    if (!string.IsNullOrEmpty(parameters["wait"]))
+                    {
+                        if (!Int32.TryParse(parameters["wait"], out waitTime) || waitTime < 1 || waitTime > 30000)
+                        {
+                            this.logger.Log(EventType.OperationError, "Invalid value for wait time: '{0}'.", parameters["wait"]);
+                            context.Response.WriteContent(string.Format("Invalid value for wait time: '{0}'. Please provide a value in ms within [1, 30000].", parameters["wait"]));
+
+                            return;
+                        }
+                    }
+
+                    bool chunked = string.Equals("true", parameters["chunked"], StringComparison.InvariantCultureIgnoreCase);
+
+                    this.logger.Log(EventType.OperationInformation, "Will return file of size: {0}{1}, bufferSize: '{2}', chunked: '{3}', wait: '{4}'.", inputNumber, requestedUnit, bufferSize , chunked, waitTime);
 
                     context.Response.SetHeaderValue("Content-Type", "application/octet-stream");
                     context.Response.SetHeaderValue("Content-Disposition", String.Format("attachment;filename=\"TestFile_{0}{1}.file\"", inputNumber, requestedUnit));
@@ -123,9 +140,9 @@ namespace Batzill.Server.Core.Operations
                         context.FlushResponse();
                         bytesSend += bufferSize;
 
-                        if(wait)
+                        if(waitTime > 0)
                         {
-                            Thread.Sleep(1000);
+                            Thread.Sleep(waitTime);
                         }
                     }
                 }

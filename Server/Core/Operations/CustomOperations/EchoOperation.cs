@@ -69,9 +69,21 @@ namespace Batzill.Server.Core.Operations
             if(!string.IsNullOrEmpty(context.Request.Url.Query))
             {
                 ss.AppendLine();
-                ss.AppendLine("QUERY");
-                ss.AppendLine(context.Request.Url.Query);
+                ss.AppendLine("QUERY:");
+
+                var parameters = System.Web.HttpUtility.ParseQueryString(context.Request.Url.Query);
+                foreach (string key in parameters.Keys)
+                {
+                    foreach (string value in parameters.GetValues(key))
+                    {
+                        ss.AppendLine(string.Format("{0} = {1}", key, value));
+                    }
+                }
             }
+            
+            ss.AppendLine();
+            ss.AppendLine("TIMESTAMP:");
+            ss.AppendLine($"{DateTime.UtcNow.ToLongDateString()} {DateTime.UtcNow.ToLongTimeString()} (UTC)");
 
             this.logger.Log(EventType.OperationInformation, "HTTP Details for operation '{0}':", this.ID);
             this.logger.Log(EventType.OperationInformation, ss.ToString());
