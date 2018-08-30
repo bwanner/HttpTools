@@ -2,32 +2,16 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using Batzill.Server.Core.Logging;
 using Batzill.Server.Core.ObjectModel;
 using Batzill.Server.Core.Settings;
-using System.Net;
+using Batzill.Server.Core.Settings.Custom.Operations;
 
 namespace Batzill.Server.Core.Operations
 {
     public class EchoOperation : Operation
     {
-
-        public override int Priority
-        {
-            get
-            {
-                return 0;
-            }
-        }
-
-        public override string Name
-        {
-            get
-            {
-                return "Echo";
-            }
-        }
+        public override string Name => "Echo";
 
         public EchoOperation() : base()
         {
@@ -85,8 +69,8 @@ namespace Batzill.Server.Core.Operations
             ss.AppendLine("TIMESTAMP:");
             ss.AppendLine($"{DateTime.UtcNow.ToLongDateString()} {DateTime.UtcNow.ToLongTimeString()} (UTC)");
 
-            this.logger.Log(EventType.OperationInformation, "HTTP Details for operation '{0}':", this.ID);
-            this.logger.Log(EventType.OperationInformation, ss.ToString());
+            this.logger?.Log(EventType.OperationInformation, "HTTP Details for operation '{0}':", this.ID);
+            this.logger?.Log(EventType.OperationInformation, ss.ToString());
 
             context.Response.WriteContent(ss.ToString());
             context.SyncResponse();

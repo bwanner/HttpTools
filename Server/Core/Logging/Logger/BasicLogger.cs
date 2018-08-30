@@ -12,7 +12,7 @@ namespace Batzill.Server.Core.Logging
 
         public override void Log(EventType type, string message = "")
         {
-            this.logWriter.WriteLog(new Log(type, message));
+            this.LogWriter.WriteLog(new Log(type, message));
         }
     }
 }

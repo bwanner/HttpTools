@@ -1,12 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using Batzill.Server.Core.Logging;
 using Batzill.Server.Core.ObjectModel;
 using Batzill.Server.Core.Settings;
+using Batzill.Server.Core.Settings.Custom.Operations;
 
 namespace Batzill.Server.Core.Operations
 {
@@ -14,21 +11,7 @@ namespace Batzill.Server.Core.Operations
     {
         private const string InputRegex = "^/redirect/?(.*)$";
 
-        public override int Priority
-        {
-            get
-            {
-                return 6;
-            }
-        }
-
-        public override string Name
-        {
-            get
-            {
-                return "Redirect";
-            }
-        }
+        public override string Name => "Redirect";
 
         public RedirectOperation() : base()
         {
@@ -38,7 +21,7 @@ namespace Batzill.Server.Core.Operations
         {
             context.Response.SetDefaultValues();
 
-            this.logger.Log(EventType.OperationInformation, "Got request to redirect request, try parsing redirect target passed by client.");
+            this.logger?.Log(EventType.OperationInformation, "Got request to redirect request, try parsing redirect target passed by client.");
 
             Match result = Regex.Match(context.Request.RawUrl, RedirectOperation.InputRegex, RegexOptions.IgnoreCase);
             if (result.Success && result.Groups.Count == 2 && !string.IsNullOrEmpty(result.Groups[1].Value))
@@ -47,7 +30,7 @@ namespace Batzill.Server.Core.Operations
             }
             else
             {
-                this.logger.Log(EventType.OperationInformation, "No redirect target passed, return info page.");
+                this.logger?.Log(EventType.OperationInformation, "No redirect target passed, return info page.");
 
                 context.Response.WriteContent("Call '/redirect/[path]' to have to server redirect the call to [path].");
             }

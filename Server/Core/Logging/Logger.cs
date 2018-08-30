@@ -3,9 +3,9 @@ using Batzill.Server.Core.Settings;
 
 namespace Batzill.Server.Core.Logging
 {
-    public abstract class Logger : ISettingsChangable
+    public abstract class Logger
     {
-        public ILogWriter logWriter
+        public ILogWriter LogWriter
         {
             get;
             private set;
@@ -13,17 +13,12 @@ namespace Batzill.Server.Core.Logging
 
         public Logger(ILogWriter logWriter)
         {
-            this.logWriter = logWriter;
+            this.LogWriter = logWriter;
         }
 
         public void Log(EventType type, string format, params object[] args)
         {
             this.Log(type, string.Format(format, args));
-        }
-
-        public virtual bool ApplySettings(HttpServerSettings settings)
-        {
-            return this.logWriter.ApplySettings(settings);
         }
 
         public abstract void Log(EventType type, string message = "");

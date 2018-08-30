@@ -1,38 +1,26 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
-using Batzill.Server.Core.IO;
 using Batzill.Server.Core.Logging;
 using Batzill.Server.Core.ObjectModel;
-using Batzill.Server.Core.Settings;
 using System.Threading;
+using Batzill.Server.Core.Settings;
+using Batzill.Server.Core.Settings.Custom.Operations;
 
 namespace Batzill.Server.Core.Operations
 {
     public class StreamLogsOperation : Operation
     {
+        private const string InputParameterClient = "client";
+        private const string InputParameterPort = "port";
+        private const string InputParameterOperation = "operation";
+        private const string InputParameterUrl = "url";
+
         private DateTime lastLogTime;
         private bool failed = true;
 
-        public override int Priority
-        {
-            get
-            {
-                return 3;
-            }
-        }
-
-        public override string Name
-        {
-            get
-            {
-                return "StreamLogs";
-            }
-        }
+        public override string Name => "StreamLogs";
 
         public StreamLogsOperation() : base()
         {
@@ -40,47 +28,107 @@ namespace Batzill.Server.Core.Operations
 
         public override void Execute(HttpContext context)
         {
-            if (!(this.logger.logWriter is MultiLogWriter))
+            if (!(this.logger?.LogWriter is MultiLogWriter))
             {
-                this.logger.Log(EventType.OperationError, "Unable to attach EventLogWriter (Passed logwriter is no MultiLogWriter).");
+                this.logger?.Log(EventType.OperationError, "Unable to attach EventLogWriter (Passed logwriter is no MultiLogWriter).");
                 return;
             }
 
-            MultiLogWriter logWriter = this.logger.logWriter as MultiLogWriter;
-            EventLogWriter eventWriter = new EventLogWriter();
+            this.logger?.Log(EventType.OperationInformation, "Parse filter (if exist).");
 
-            this.logger.Log(EventType.OperationInformation, "Set response headers.");
+            List<Func<Log, bool>> filters = new List<Func<Log, bool>>()
+            {
+                (log) => (log is OperationLog) == false || !string.Equals((log as OperationLog).OperationName, this.Name)
+            };
+
+            var parameters = System.Web.HttpUtility.ParseQueryString(System.Web.HttpUtility.UrlDecode(context.Request.Url.Query));
+            foreach(string parameter in parameters)
+            {
+                this.logger?.Log(EventType.OperationInformation, "Found filter for '{0}': '{1}'", parameter, parameters[parameter]);
+
+                // skip empty filters
+                if(string.IsNullOrEmpty(parameters[parameter]))
+                {
+                    continue;
+                }
+
+                switch(parameter)
+                {
+                    case StreamLogsOperation.InputParameterClient:
+                        filters.Add((log) =>
+                        {
+                            return log is OperationLog && Regex.IsMatch((log as OperationLog).ClientIp, parameters[parameter], RegexOptions.IgnoreCase);
+                        });
+                        break;
+                    case StreamLogsOperation.InputParameterPort:
+                        filters.Add((log) =>
+                        {
+                            return log is OperationLog && Regex.IsMatch((log as OperationLog).LocalPort, parameters[parameter], RegexOptions.IgnoreCase);
+                        });
+                        break;
+                    case StreamLogsOperation.InputParameterOperation:
+                        filters.Add((log) =>
+                        {
+                            return log is OperationLog && Regex.IsMatch((log as OperationLog).OperationName, parameters[parameter], RegexOptions.IgnoreCase);
+                        });
+                        break;
+                    case StreamLogsOperation.InputParameterUrl:
+                        filters.Add((log) =>
+                        {
+                            return log is OperationLog && Regex.IsMatch((log as OperationLog).Url, parameters[parameter], RegexOptions.IgnoreCase);
+                        });
+                        break;
+                    default:
+                        this.logger?.Log(EventType.OperationError, "Unknown filter '{0}'.", parameter);
+                        break;
+                }
+            }
+
+            this.logger?.Log(EventType.OperationInformation, "Set response headers.");
 
             context.Response.SetDefaultValues();
             context.Response.SendChuncked = true;
             context.Response.SetHeaderValue("Content-Type", "text/event-stream");
             context.SyncResponse();
 
-
-            this.logger.Log(EventType.OperationInformation, "Setup event writer.");
+            this.logger?.Log(EventType.OperationInformation, "Setup event writer.");
 
             this.failed = false;
+
+            MultiLogWriter logWriter = this.logger?.LogWriter as MultiLogWriter;
+            EventLogWriter eventWriter = new EventLogWriter();
             eventWriter.LogWritten += (sender, log) =>
             {
                 lock (context)
                 {
                     try
                     {
-                        this.lastLogTime = DateTime.Now;
+                        if (filters.Any(filter => !filter(log)))
+                        {
+                            return;
+                        }
 
-                        context.Response.WriteContent(string.Format("[{0} | {1}] {2}{3}", log.Timestamp, log.EventType, string.Join(", ", log.ExtendedData), Environment.NewLine));
+                        this.lastLogTime = DateTime.Now;
+                        context.Response.WriteContent(string.Format(
+                            "[{0} | {1}] {2} {3}{4}",
+                            log.Timestamp,
+                            log.EventType,
+                            log.ExtendedData.Length > 1 ? $"('{string.Join("', '", log.ExtendedData, 0, log.ExtendedData.Length - 1)}')" : "",
+                            log.ExtendedData[log.ExtendedData.Length - 1],
+                            Environment.NewLine));
+                        
                         context.FlushResponse();
                     }
                     catch(Exception ex)
                     {
-                        this.logger.Log(EventType.OperationError, "Failed to write log to stream, stop operation: {0}", ex.Message);
+                        this.logger?.Log(EventType.OperationError, "Failed to write log to stream, stop operation: {0}", ex.Message);
                         this.failed = true;
                     }
                 }
             };
 
 
-            this.logger.Log(EventType.OperationInformation, "Add event writer to global log writer.");
+            this.logger?.Log(EventType.OperationInformation, "Add event writer to global log writer.");
 
             try
             {
@@ -89,29 +137,29 @@ namespace Batzill.Server.Core.Operations
             }
             catch (Exception ex)
             {
-                this.logger.Log(EventType.OperationError, "Unable to attach EventLogWriter (Adding failed): {0}", ex.Message);
+                this.logger?.Log(EventType.OperationError, "Unable to attach EventLogWriter (Adding failed): {0}", ex.Message);
                 return;
             }
 
-            int idleTimeout = 300;
-            int idleTime = 0;
-            int sleepTime = 1000;
+            int idleTimeoutinMs = 300000;
+            int idleTimeinMs = 0;
+            int sleepTimeInMs = 1000;
 
             do
             {
-                Thread.Sleep(sleepTime);
+                Thread.Sleep(sleepTimeInMs);
 
-                idleTime = (int)(DateTime.Now - this.lastLogTime).TotalSeconds;
+                idleTimeinMs = (int)(DateTime.Now - this.lastLogTime).TotalMilliseconds;
 
-            } while (!failed && idleTime <= idleTimeout);
+            } while (!failed && idleTimeinMs <= idleTimeoutinMs);
 
             // only output this information when stream didn't stop because flushing log data to stream failed.
-            if(idleTime > idleTimeout)
+            if(idleTimeinMs > idleTimeoutinMs)
             {
-                this.logger.Log(EventType.OperationInformation, "No log event for {0}s, stopping the log stream.", idleTimeout);
+                this.logger?.Log(EventType.OperationInformation, "No log event for {0}s, stopping the log stream.", idleTimeoutinMs);
             }
 
-            this.logger.Log(EventType.OperationInformation, "Remove event writer to global log writer.");
+            this.logger?.Log(EventType.OperationInformation, "Remove event writer to global log writer.");
 
             try
             {
@@ -119,7 +167,7 @@ namespace Batzill.Server.Core.Operations
             }
             catch (Exception ex)
             {
-                this.logger.Log(EventType.SystemError, "Unable to remove EventLogWriter: {0}", ex.Message);
+                this.logger?.Log(EventType.SystemError, "Unable to remove EventLogWriter: {0}", ex.Message);
             }
 
             return;

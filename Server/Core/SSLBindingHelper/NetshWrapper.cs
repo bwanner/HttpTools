@@ -46,19 +46,19 @@ namespace Batzill.Server.Core.SSLBindingHelper
 
         public bool TryAddOrUpdateCertBinding(string certThumbprint, string appId, string port, string host = "0.0.0.0")
         {
-            this.logger.Log(EventType.ServerSetup, "Try add or update SSL Certificate binding for host:port '{0}:{1}' to cert: '{2}', appId: '{3}'.", host, port, certThumbprint, appId);
+            this.logger?.Log(EventType.ServerSetup, "Try add or update SSL Certificate binding for host:port '{0}:{1}' to cert: '{2}', appId: '{3}'.", host, port, certThumbprint, appId);
 
             // First check if binding already exists
             if (!this.TryGetExistingBinding(out string existingCertThumprint, out string existingAppId, port, host))
             {
-                this.logger.Log(EventType.SystemError, "Unable to get current SSL Certificate binding informations, stop operation.");
+                this.logger?.Log(EventType.SystemError, "Unable to get current SSL Certificate binding informations, stop operation.");
                 return false;
             }
 
             if (string.Equals(existingCertThumprint, certThumbprint, StringComparison.InvariantCultureIgnoreCase) &&
                 string.Equals(existingAppId, appId, StringComparison.InvariantCultureIgnoreCase))
             {
-                this.logger.Log(EventType.ServerSetup, "Binding already exists, nothing to do here.");
+                this.logger?.Log(EventType.ServerSetup, "Binding already exists, nothing to do here.");
                 return true;
             }
 
@@ -66,10 +66,10 @@ namespace Batzill.Server.Core.SSLBindingHelper
             // If there is a different binding on the same port, remove it
             if (!string.IsNullOrEmpty(existingCertThumprint) || !string.IsNullOrEmpty(existingAppId))
             {
-                this.logger.Log(EventType.ServerSetup, "A different SSL cert binding exists for that endpoint, delete it first.");
+                this.logger?.Log(EventType.ServerSetup, "A different SSL cert binding exists for that endpoint, delete it first.");
                 if (!this.TryDeleteExistingBinding(port, host))
                 {
-                    logger.Log(EventType.SystemError, "Unable to delete existing SSL Certificate binding, stop operation.");
+                    logger?.Log(EventType.SystemError, "Unable to delete existing SSL Certificate binding, stop operation.");
                     return false;
                 }
             }
@@ -77,18 +77,18 @@ namespace Batzill.Server.Core.SSLBindingHelper
             // Try to add the binding
             if (!this.TryAddCertBinding(certThumbprint, appId, port, host))
             {
-                logger.Log(EventType.SystemError, "Unable to add new SSL Certificate binding, stop operation.");
+                logger?.Log(EventType.SystemError, "Unable to add new SSL Certificate binding, stop operation.");
                 return false;
             }
 
-            this.logger.Log(EventType.ServerSetup, "Successfully changed SSL cert binding for host:port '{0}:{1}' to cert: '{2}', appId: '{3}'.", host, port, certThumbprint, appId);
+            this.logger?.Log(EventType.ServerSetup, "Successfully changed SSL cert binding for host:port '{0}:{1}' to cert: '{2}', appId: '{3}'.", host, port, certThumbprint, appId);
 
             return true;
         }
 
         public bool TryAddCertBinding(string certThumbprint, string appId, string port, string host = "0.0.0.0")
         {
-            this.logger.Log(EventType.ServerSetup, "Attempting to add a SSL cert binding for '{0}:{1}' with certHash: '{2}', appId: '{3}'", host, port, NetShShowCertHash, appId);
+            this.logger?.Log(EventType.ServerSetup, "Attempting to add a SSL cert binding for '{0}:{1}' with certHash: '{2}', appId: '{3}'", host, port, NetShShowCertHash, appId);
 
             string argument = string.Format(@"http add sslcert {0}={1}:{2} certhash={3} appid={{{4}}} certstorename=my", this.GetEndpointType(host), host, port, certThumbprint, appId);
             Process process = new Process()
@@ -109,10 +109,10 @@ namespace Batzill.Server.Core.SSLBindingHelper
             {
                 if (!process.Start() || !process.WaitForExit(NetshWrapper.NetshIdleTimeoutInMs) || process.ExitCode != 0)
                 {
-                    this.logger.Log(EventType.SystemError, "Unable to add new SSL Certificate binding!");
-                    this.logger.Log(EventType.SystemError, "netsh ExitCode: {0}", process.ExitCode);
-                    this.logger.Log(EventType.SystemError, "netsh OutputStream: {0}", process.StandardOutput.ReadToEnd());
-                    this.logger.Log(EventType.SystemError, "netsh ErrorStream: {0}", process.StandardError.ReadToEnd());
+                    this.logger?.Log(EventType.SystemError, "Unable to add new SSL Certificate binding!");
+                    this.logger?.Log(EventType.SystemError, "netsh ExitCode: {0}", process.ExitCode);
+                    this.logger?.Log(EventType.SystemError, "netsh OutputStream: {0}", process.StandardOutput.ReadToEnd());
+                    this.logger?.Log(EventType.SystemError, "netsh ErrorStream: {0}", process.StandardError.ReadToEnd());
 
                     return false;
                 }
@@ -121,8 +121,8 @@ namespace Batzill.Server.Core.SSLBindingHelper
             }
             catch (Exception ex)
             {
-                this.logger.Log(EventType.SystemError, "Unable to delete current SSL Certificate binding!");
-                this.logger.Log(EventType.SystemError, ex.ToString());
+                this.logger?.Log(EventType.SystemError, "Unable to delete current SSL Certificate binding!");
+                this.logger?.Log(EventType.SystemError, ex.ToString());
 
                 return false;
             }
@@ -130,7 +130,7 @@ namespace Batzill.Server.Core.SSLBindingHelper
 
         public bool TryGetExistingBinding(out string certThumbprint, out string appId, string port, string host = "0.0.0.0")
         {
-            this.logger.Log(EventType.ServerSetup, "Attempting to get the SSL cert binding information for '{0}:{1}'", host, port);
+            this.logger?.Log(EventType.ServerSetup, "Attempting to get the SSL cert binding information for '{0}:{1}'", host, port);
 
             certThumbprint = string.Empty;
             appId = string.Empty;
@@ -155,10 +155,10 @@ namespace Batzill.Server.Core.SSLBindingHelper
             {
                 if (!process.Start() || !process.WaitForExit(NetshWrapper.NetshIdleTimeoutInMs))
                 {
-                    this.logger.Log(EventType.SystemError, "Unable to get current SSL Certificate binding informations!");
-                    this.logger.Log(EventType.SystemError, "netsh ExitCode: {0}", process.ExitCode);
-                    this.logger.Log(EventType.SystemError, "netsh OutputStream: {0}", process.StandardOutput.ReadToEnd());
-                    this.logger.Log(EventType.SystemError, "netsh ErrorStream: {0}", process.StandardError.ReadToEnd());
+                    this.logger?.Log(EventType.SystemError, "Unable to get current SSL Certificate binding informations!");
+                    this.logger?.Log(EventType.SystemError, "netsh ExitCode: {0}", process.ExitCode);
+                    this.logger?.Log(EventType.SystemError, "netsh OutputStream: {0}", process.StandardOutput.ReadToEnd());
+                    this.logger?.Log(EventType.SystemError, "netsh ErrorStream: {0}", process.StandardError.ReadToEnd());
 
                     return false;
                 }
@@ -166,7 +166,7 @@ namespace Batzill.Server.Core.SSLBindingHelper
                 string netshOutput = process.StandardOutput.ReadToEnd();
                 if (string.IsNullOrEmpty(netshOutput))
                 {
-                    logger.Log(EventType.SystemError, "Empty output by netsh!");
+                    logger?.Log(EventType.SystemError, "Empty output by netsh!");
                     return false;
                 }
 
@@ -179,28 +179,28 @@ namespace Batzill.Server.Core.SSLBindingHelper
                         certThumbprint = certMatch.Groups[1].Value;
                         appId = appIdMatch.Groups[1].Value;
 
-                        this.logger.Log(EventType.ServerSetup, "Found existing SSL cert binding for '{0}:{1}': certHash: '{2}', appId: '{3}'", host, port, certThumbprint, appId);
+                        this.logger?.Log(EventType.ServerSetup, "Found existing SSL cert binding for '{0}:{1}': certHash: '{2}', appId: '{3}'", host, port, certThumbprint, appId);
 
                         return true;
                     }
 
-                    this.logger.Log(EventType.SystemError, "Found cert hash but no app id!");
+                    this.logger?.Log(EventType.SystemError, "Found cert hash but no app id!");
                     return false;
                 }
                 else if (appIdMatch.Success)
                 {
-                    this.logger.Log(EventType.SystemError, "Found appId but no cert hash!");
+                    this.logger?.Log(EventType.SystemError, "Found appId but no cert hash!");
                     return false;
                 }
 
-                this.logger.Log(EventType.ServerSetup, "No SSL cert binding exists yet for '{0}:{1}'", host, port);
+                this.logger?.Log(EventType.ServerSetup, "No SSL cert binding exists yet for '{0}:{1}'", host, port);
 
                 return true;
             }
             catch (Exception ex)
             {
-                this.logger.Log(EventType.SystemError, "Unable to get current SSL Certificate binding informations!");
-                this.logger.Log(EventType.SystemError, ex.ToString());
+                this.logger?.Log(EventType.SystemError, "Unable to get current SSL Certificate binding informations!");
+                this.logger?.Log(EventType.SystemError, ex.ToString());
 
                 return false;
             }
@@ -208,7 +208,7 @@ namespace Batzill.Server.Core.SSLBindingHelper
 
         public bool TryDeleteExistingBinding(string port, string host = "0.0.0.0")
         {
-            this.logger.Log(EventType.ServerSetup, "Attempting to delete the SSL cert binding for '{0}:{1}'", host, port);
+            this.logger?.Log(EventType.ServerSetup, "Attempting to delete the SSL cert binding for '{0}:{1}'", host, port);
 
             string argument = string.Format("http delete sslcert {0}={1}:{2}", this.GetEndpointType(host), host, port);
             Process process = new Process()
@@ -232,14 +232,14 @@ namespace Batzill.Server.Core.SSLBindingHelper
                     string output = process.StandardOutput.ReadToEnd();
                     if (!string.IsNullOrEmpty(output) && output.Contains(NetshWrapper.NetShDeleteFailedFileNotFound))
                     {
-                        this.logger.Log(EventType.ServerSetup, "Deleting SSL cert binding for ipport={0}:{1} failed because binding didn't exist, return success.", host, port);
+                        this.logger?.Log(EventType.ServerSetup, "Deleting SSL cert binding for ipport={0}:{1} failed because binding didn't exist, return success.", host, port);
                         return true;
                     }
 
-                    this.logger.Log(EventType.SystemError, "Unable to delete existing SSL Certificate binding!");
-                    this.logger.Log(EventType.SystemError, "netsh ExitCode: {0}", process.ExitCode);
-                    this.logger.Log(EventType.SystemError, "netsh OutputStream: {0}", process.StandardOutput.ReadToEnd());
-                    this.logger.Log(EventType.SystemError, "netsh ErrorStream: {0}", process.StandardError.ReadToEnd());
+                    this.logger?.Log(EventType.SystemError, "Unable to delete existing SSL Certificate binding!");
+                    this.logger?.Log(EventType.SystemError, "netsh ExitCode: {0}", process.ExitCode);
+                    this.logger?.Log(EventType.SystemError, "netsh OutputStream: {0}", process.StandardOutput.ReadToEnd());
+                    this.logger?.Log(EventType.SystemError, "netsh ErrorStream: {0}", process.StandardError.ReadToEnd());
 
                     return false;
                 }
@@ -248,8 +248,8 @@ namespace Batzill.Server.Core.SSLBindingHelper
             }
             catch (Exception ex)
             {
-                this.logger.Log(EventType.SystemError, "Unable to delete current SSL Certificate binding!");
-                this.logger.Log(EventType.SystemError, ex.ToString());
+                this.logger?.Log(EventType.SystemError, "Unable to delete current SSL Certificate binding!");
+                this.logger?.Log(EventType.SystemError, ex.ToString());
 
                 return false;
             }

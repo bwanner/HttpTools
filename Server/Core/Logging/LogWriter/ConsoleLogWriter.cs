@@ -1,19 +1,20 @@
 ﻿using System;
-using System.Text;
 using Batzill.Server.Core.Settings;
 
 namespace Batzill.Server.Core.Logging
 {
     public class ConsoleLogWriter : ILogWriter
     {
-        public bool ApplySettings(HttpServerSettings settings)
-        {
-            return true;
-        }
+        public const string Name = "Console";
 
         public void WriteLog(Log log)
         {
-            Console.WriteLine("[{0} | {1}] {2}", log.Timestamp, log.EventType, string.Join(", ", log.ExtendedData));
+            Console.WriteLine(
+                "[{0} | {1}] {2} {3}", 
+                log.Timestamp, 
+                log.EventType, 
+                log.ExtendedData.Length > 1 ? $"('{string.Join("', '", log.ExtendedData, 0, log.ExtendedData.Length - 1)}')" : "",
+                log.ExtendedData[log.ExtendedData.Length - 1]);
         }
     }
 }

@@ -14,54 +14,80 @@ namespace Batzill.Server.Core
     public class AssemblyOperationFactory : IOperationFactory
     {
         private Logger logger;
-        private SortedSet<Operation> operations;
+        private HttpServerSettings settings;
+        private SortedSet<Tuple<int, Operation>> operations;
 
-        public AssemblyOperationFactory(Logger logger, HttpServerSettings settings = null)
+        public AssemblyOperationFactory(Logger logger, HttpServerSettings settings)
         {
             this.logger = logger;
-            this.operations = new SortedSet<Operation>(new OperationPriorityComparer());
+            this.settings = settings;
 
-            this.ApplySettings(settings);
+            this.operations = new SortedSet<Tuple<int, Operation>>(new OperationPriorityComparer());
         }
 
-        public void LoadOperations(HttpServerSettings settings)
+        public void LoadOperations()
         {
             lock (this.operations)
             {
-                this.logger.Log(EventType.OperationLoading, "Attempting to load all available operations.");
+                this.logger?.Log(EventType.OperationLoading, "Attempting to load all available operations.");
 
                 var operationsTypes = (from operation in Assembly.GetExecutingAssembly().GetTypes()
                                        where operation.IsClass && operation.IsSubclassOf(typeof(Operation))
                                        select operation).ToList();
 
-                this.logger.Log(EventType.OperationLoading, "Found {0} operations in the assembly .", operationsTypes.Count);
-                this.logger.Log(EventType.OperationLoading, "Start instanciating all operationTypes.");
+                this.logger?.Log(EventType.OperationLoading, "Found {0} operations in the assembly .", operationsTypes.Count);
+
+                var requestedOperations = this.settings.Operations.ToDictionary((op) => op.Name, StringComparer.InvariantCultureIgnoreCase);
+
+                this.logger?.Log(EventType.OperationLoading, "Found {0} operations in the settings .", requestedOperations.Count);
+
+                this.logger?.Log(EventType.OperationLoading, "Start instanciating all requested operationTypes.");
 
                 this.operations.Clear();
 
+                int skippedCount = 0;
                 foreach (Type operationType in operationsTypes)
                 {
                     try
                     {
-                        this.logger.Log(EventType.OperationLoading, "Attempting to instanciate operationType '{0}'.", operationType);
+                        this.logger?.Log(EventType.OperationLoading, "Attempting to instanciate operationType '{0}'.", operationType);
 
                         Operation operation = this.CreateInstance(operationType);
+                        string operationName = operation.Name;
 
-                        this.logger.Log(EventType.OperationLoading, "Attempting to initialize operation '{0}'.", operation.Name);
+                        this.logger?.Log(EventType.OperationLoading, "OperationType '{0}' is registered as '{1}'.", operationType, operationName);
 
-                        operation.InitializeClass(this.logger, settings);
+                        if (!requestedOperations.ContainsKey(operationName))
+                        {
+                            this.logger?.Log(EventType.OperationLoading, "Skipping '{0}' as it wasn't requested.", operationName);
 
-                        this.logger.Log(EventType.OperationLoading, "Operation loaded. Name: '{0}', Priority: '{1}'.", operation.Name, operation.Priority);
+                            skippedCount++;
 
-                        this.operations.Add(operation);
+                            continue;
+                        }
+
+                        var operationSettings = requestedOperations[operationName];
+
+                        this.logger?.Log(EventType.OperationLoading, "Attempting to execute one-time initialization for operation '{0}'.", operation.Name);
+
+                        operation.InitializeClass(operationSettings);
+
+                        this.logger?.Log(EventType.OperationLoading, "Operation loaded. Name: '{0}', Priority: '{1}'.", operation.Name, operationSettings.Priority);
+
+                        this.operations.Add(new Tuple<int, Operation>(operationSettings.Priority, operation));
                     }
                     catch (Exception ex)
                     {
-                        this.logger.Log(EventType.OperationLoadingError, "An error occured while instanciating/initializing operationType '{0}': {1}", operationType, ex.ToString());
+                        this.logger?.Log(EventType.OperationLoadingError, "An error occured while instanciating/initializing operationType '{0}': {1}", operationType, ex);
                     }
                 }
 
-                this.logger.Log(EventType.OperationLoading, "Finished loading operations: Successful: '{0}', Failed: '{1}'.", this.operations.Count, (operationsTypes.Count - this.operations.Count));
+                this.logger?.Log(
+                    EventType.OperationLoading, 
+                    "Finished loading operations: Successful: '{0}', Skipped: '{1}', Failed: '{2}'.",
+                    this.operations.Count,
+                    skippedCount,
+                    requestedOperations.Count - this.operations.Count);
             }
         }
 
@@ -70,26 +96,19 @@ namespace Batzill.Server.Core
             lock (this.operations)
             {
                 Operation result = null;
-                foreach (Operation operation in this.operations)
+                foreach (Tuple<int, Operation> operationEntry in this.operations)
                 {
+                    Operation operation = operationEntry.Item2;
+                    int priority = operationEntry.Item1;
+
                     if (operation.Match(context))
                     {
-                        this.logger.Log(EventType.OperationLoading, "Found matching operation. Name: '{0}', Priority: '{1}'.", operation.Name, operation.Priority);
+                        this.logger?.Log(EventType.OperationLoading, "Found matching operation. Name: '{0}', Priority: '{1}'.", operation.Name, priority);
                         
                         result = this.CreateInstance(operation.GetType());
 
                         break;
                     }
-                }
-
-                // return default operation if no operatin was found
-                if (result == null)
-                {
-                    this.logger.Log(
-                        EventType.OperationLoading,
-                        "No matching operation found , defaulting to 'EchoOperation'.");
-                    
-                    result = this.CreateInstance(typeof(EchoOperation));
                 }
 
                 return result;
@@ -98,18 +117,7 @@ namespace Batzill.Server.Core
 
         private Operation CreateInstance(Type operationType)
         {
-            if (!operationType.IsSubclassOf(typeof(Operation)))
-            {
-                this.logger.Log(EventType.OperationLoadingError, "Invalid type passed, can't convert '{0}' to an operation", operationType);
-                throw new ArgumentException("operationType");
-            }
-            
             return (Operation)Activator.CreateInstance(operationType);
-        }
-
-        public bool ApplySettings(HttpServerSettings settings)
-        {
-            return true;
         }
     }
 }

@@ -9,12 +9,13 @@ using System.Text;
 using System.Threading.Tasks;
 using System.IO;
 using Batzill.Server.Core.SSLBindingHelper;
+using Batzill.Server.Core.Settings.Custom.Operations;
 
 namespace Batzill.Server
 {
     class HttpServerRole
     {
-        private const string DefaultSettingsFilePath = "default.cfg";
+        private const string DefaultSettingsFilePath = "default.json";
 
         private static Logger logger;
         private static HttpServer httpServer;
@@ -37,28 +38,27 @@ namespace Batzill.Server
 
         private static void SetupLogging()
         {
-            HashSet<string> logWriterRequests = new HashSet<string>(
-                HttpServerRole.settingsProvider.Settings.Get(HttpServerSettingNames.LogWriter)
-                .Split(
-                    new string[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries
-                    ));
-
             List<ILogWriter> logWriter = new List<ILogWriter>();
 
-            if (logWriterRequests.Contains(HttpServerSettingValues.LogWriterConsole))
+            foreach(LogWriterSettings lws in HttpServerRole.settingsProvider.Settings.LogWriters)
             {
-                HttpServerRole.logger.Log(EventType.ServerSetup, "{0} logging enabled.", HttpServerSettingValues.LogWriterConsole);
-                logWriter.Add(new ConsoleLogWriter());
-            }
-            if(logWriterRequests.Contains(HttpServerSettingValues.LogWriterFile))
-            {
-                HttpServerRole.logger.Log(EventType.ServerSetup, "{0} logging enabled.", HttpServerSettingValues.LogWriterFile);
-                logWriter.Add(new FileLogWriter(new SystemFileWriter(), HttpServerRole.settingsProvider.Settings));
-            }
-            if(logWriterRequests.Contains(HttpServerSettingValues.LogWriterOperation))
-            {
-                HttpServerRole.logger.Log(EventType.ServerSetup, "{0} logging enabled.", HttpServerSettingValues.LogWriterOperation);
-                logWriter.Add(new OperationLogWriter(new SystemFileWriter(), HttpServerRole.settingsProvider.Settings));
+                switch(lws.Name)
+                {
+                    case ConsoleLogWriter.Name:
+                        HttpServerRole.logger?.Log(EventType.ServerSetup, "Enable logger '{0}'.", lws.Name);
+                        logWriter.Add(new ConsoleLogWriter());
+                        break;
+
+                    case FileLogWriter.Name:
+                        HttpServerRole.logger?.Log(EventType.ServerSetup, "Enable logger '{0}'.", lws.Name);
+                        logWriter.Add(new FileLogWriter(new SystemFileWriter(), lws as FileLogWriterSettings));
+                        break;
+
+                    case OperationLogWriter.Name:
+                        HttpServerRole.logger?.Log(EventType.ServerSetup, "Enable logger '{0}'.", lws.Name);
+                        logWriter.Add(new OperationLogWriter(new SystemFileWriter(), lws as OperationLogWriterSettings));
+                        break;
+                }
             }
 
             HttpServerRole.logger = new BasicLogger(new MultiLogWriter(logWriter));
@@ -70,6 +70,7 @@ namespace Batzill.Server
             string settingsFile = args == null || args.Length == 0 ? Path.Combine(AppDomain.CurrentDomain.BaseDirectory, HttpServerRole.DefaultSettingsFilePath) : args[0];
 
             HttpServerRole.settingsProvider = new HttpServerSettingsProvider(logger, new SystemFileReader(), settingsFile);
+            HttpServerRole.settingsProvider.LoadSettings();
 
             // setup regular logging
             HttpServerRole.SetupLogging();
@@ -92,13 +93,6 @@ namespace Batzill.Server
                 Console.Write("Start failed, press ENTER to try again.");
                 Console.ReadLine();
             }
-        }
-
-        private static void SettingsChangedEventHandler(HttpServerSettings settings)
-        {
-            HttpServerRole.SetupLogging();
-            HttpServerRole.operationFactory.ApplySettings(settings);
-            HttpServerRole.httpServer.ApplySettings(settings);
         }
     }
 }

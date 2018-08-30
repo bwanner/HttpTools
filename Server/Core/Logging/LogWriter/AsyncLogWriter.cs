@@ -16,11 +16,6 @@ namespace Batzill.Server.Core.Logging
             this.logWriter = logWriter;
         }
 
-        public bool ApplySettings(HttpServerSettings settings)
-        {
-            return this.logWriter.ApplySettings(settings);
-        }
-
         public void WriteLog(Log log)
         {
             lock (this.logWriter)

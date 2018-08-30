@@ -1,46 +1,41 @@
 ﻿using Batzill.Server.Core.IO;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Batzill.Server.Core.Settings;
+using Batzill.Server.Core.Settings.Custom.Operations;
 
 namespace Batzill.Server.Core.Logging
 {
     public class OperationLogWriter : ILogWriter
     {
+        public const string Name = "Operation";
         public const string OperationCollectionFolder = "All";
 
         private IFileWriter fileWriter;
         private string folder;
 
-        public OperationLogWriter(IFileWriter fileWriter, HttpServerSettings settings)
+        public OperationLogWriter(IFileWriter fileWriter, OperationLogWriterSettings settings)
         {
             this.fileWriter = fileWriter;
+
             this.ApplySettings(settings);
         }
-
-        public bool ApplySettings(HttpServerSettings settings)
+        
+        public void ApplySettings(OperationLogWriterSettings settings)
         {
             if (settings == null)
             {
-                return false;
+                throw new ArgumentNullException($"'{nameof(settings)}' can't be null.");
+            }
+
+            if (!Directory.Exists(settings.LogFolder))
+            {
+                Directory.CreateDirectory(settings.LogFolder);
             }
 
             lock (this.fileWriter)
             {
-                try
-                {
-                    this.folder = Path.Combine(settings.Get(HttpServerSettingNames.LogFolder), settings.Get(HttpServerSettingNames.LogFolderOperations));
-                }
-                catch (Exception)
-                {
-                    return false;
-                }
-
-                return true;
+                this.folder = settings.LogFolder;
             }
         }
 

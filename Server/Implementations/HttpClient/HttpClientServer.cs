@@ -10,6 +10,9 @@ using System.Text.RegularExpressions;
 using System.Collections.Generic;
 using Batzill.Server.Core.SSLBindingHelper;
 using System.Threading;
+using Newtonsoft.Json;
+using System.Runtime.InteropServices;
+using System.Reflection;
 
 namespace Batzill.Server
 {
@@ -90,66 +93,46 @@ namespace Batzill.Server
             this.ApplyLimits(settings);
         }
 
-
         private void ApplyEndpoints(HttpServerSettings settings)
         {
-            this.logger.Log(EventType.ServerSetup, "Set endpoints passed in settings.");
-
-            string[] endpoints = { settings.Default(HttpServerSettingNames.Endpoint) };
-            if (!string.IsNullOrEmpty(settings.Get(HttpServerSettingNames.Endpoint)))
-            {
-                endpoints = settings.Get(HttpServerSettingNames.Endpoint).Split(new string[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);
-            }
+            this.logger?.Log(EventType.ServerSetup, "Set endpoints passed in settings.");
 
             this.listener.Prefixes.Clear();
-            foreach (string endpoint in endpoints)
+            foreach (Core.Settings.EndPoint ep in settings.Core.EndPoints)
             {
-                this.logger.Log(EventType.ServerSetup, "Try to add endpoint '{0}'.", endpoint);
+                this.logger?.Log(EventType.ServerSetup, "Try to add endpoint '{0}'.", JsonConvert.SerializeObject(ep, Formatting.Indented));
 
-                Match match = Regex.Match(endpoint, HttpServerSettingFormats.EndpointFormat, RegexOptions.IgnoreCase);
-                if (match.Success && match.Groups.Count > 1)
+                if (Uri.CheckHostName(ep.HostName) == UriHostNameType.Dns || HttpClientServer.AlternateHostNames.Contains(ep.HostName))
                 {
-                    string prefix = match.Groups[1].Value;
-                    string protocol = match.Groups[2].Value;
-                    string host = match.Groups[3].Value;
-                    string port = match.Groups[5].Value ?? ServiceConstants.DefaultPort.ToString();
-                    string certThumbprint = match.Groups[9].Value;
-
-                    if (Uri.CheckHostName(host) == UriHostNameType.Dns || HttpClientServer.AlternateHostNames.Contains(host))
+                    if (ep.Protocol == Protocol.HTTPS)
                     {
-                        if (String.Equals("https", protocol, StringComparison.InvariantCultureIgnoreCase))
+                        string bindingHost = HttpClientServer.AlternateHostNames.Contains(ep.HostName) ? this.sslBindingHelper.DefaultEndpointHost : ep.HostName;
+                        if (!this.sslBindingHelper.TryAddOrUpdateCertBinding(ep.CertificateThumbPrint, HttpClientServer.GetApplicationId(), ep.Port.ToString(), bindingHost))
                         {
-                            if (string.IsNullOrEmpty(certThumbprint))
-                            {
-                                this.logger.Log(EventType.SettingInvalid, "Skipping endpoint '{0}', protocol 'https' but no cert thumprint provided.", endpoint);
-                                continue;
-                            }
-
-                            string bindingHost = HttpClientServer.AlternateHostNames.Contains(host) ? this.sslBindingHelper.DefaultEndpointHost  : host;
-                            if (!this.sslBindingHelper.TryAddOrUpdateCertBinding(certThumbprint, ServiceConstants.ApplicationId, port, bindingHost))
-                            {
-                                this.logger.Log(EventType.SettingInvalid, "Skipping endpoint '{0}', unable to bind certificate '{1}'.", endpoint, certThumbprint);
-                                continue;
-                            }
+                            this.logger?.Log(EventType.SettingInvalid, "Skipping endpoint, unable to bind certificate '{0}'.", ep.CertificateThumbPrint);
+                            continue;
                         }
+                    }
 
-                        this.listener.Prefixes.Add(prefix);
-                        this.logger.Log(EventType.ServerSetup, "Added prefix '{0}'.", prefix);
-                    }
-                    else
-                    {
-                        this.logger.Log(EventType.SettingInvalid, "Skipping endpoint '{0}', invalid host '{1}'.", endpoint, host);
-                    }
+                    string prefix = string.Format(
+                        "{0}://{1}:{2}/",
+                        ep.Protocol.ToString().ToLower(),
+                        ep.HostName,
+                        ep.Port);
+
+                    this.listener.Prefixes.Add(prefix);
+
+                    this.logger?.Log(EventType.ServerSetup, "Added prefix '{0}'.", prefix);
                 }
                 else
                 {
-                    this.logger.Log(EventType.SettingInvalid, "Skipping endpoint '{0}', unable to parse.", endpoint);
+                    this.logger?.Log(EventType.SettingInvalid, "Skipping endpoint, invalid host '{0}'.", ep.HostName);
                 }
             }
 
             if (this.listener.Prefixes.Count == 0)
             {
-                this.logger.Log(EventType.SettingInvalid, "Settings file did not contain any valid endpoints!");
+                this.logger?.Log(EventType.SettingInvalid, "Settings file did not contain any valid endpoints!");
                 throw new ArgumentException("Settings file did not contain any valid endpoints!");
             }
         }
@@ -157,35 +140,25 @@ namespace Batzill.Server
         private void ApplyLimits(HttpServerSettings settings)
         {
             /* IdleTimeout */
-            if (!Int32.TryParse(settings.Get(HttpServerSettingNames.IdleTimeout), out int idleTimeout))
-            {
-                this.logger.Log(EventType.SettingsParsingError, "Unable to parse IdleTimeout '{0}'.", settings.Get(HttpServerSettingNames.IdleTimeout));
-                throw new ArgumentException("IdleTimeout");
-            }
-            this.listener.TimeoutManager.IdleConnection = new TimeSpan(0, 0, idleTimeout);
+            this.listener.TimeoutManager.IdleConnection = new TimeSpan(0, 0, 0, 0, settings.Core.IdleTimeout);
 
-            this.logger.Log(EventType.ServerSetup, "Set idle timeout to {0}s.", idleTimeout);
+            this.logger?.Log(EventType.ServerSetup, "Set idle timeout to {0}s.", settings.Core.IdleTimeout);
 
             /* ConnectionLimit */
-            if (!Int32.TryParse(settings.Get(HttpServerSettingNames.ConnectionLimit), out int maxConcurrentConnections))
-            {
-                this.logger.Log(EventType.SettingsParsingError, "Unable to parse ConnectionLimit '{0}'.", settings.Get(HttpServerSettingNames.ConnectionLimit));
-                throw new ArgumentException("ConnectionLimit");
-            }
-            // server got stopped before settings update, save to reinitialize the semaphore.
-            this.semaphore = new Semaphore(maxConcurrentConnections, maxConcurrentConnections);
+            /* (server got stopped before settings update, save to reinitialize the semaphore.) */
+            this.semaphore = new Semaphore(settings.Core.ConnectionLimit, settings.Core.ConnectionLimit);
 
-            this.logger.Log(EventType.ServerSetup, "Set ConnectionLimit to '{0}'.", maxConcurrentConnections);
+            this.logger?.Log(EventType.ServerSetup, "Set ConnectionLimit to '{0}'.", settings.Core.ConnectionLimit);
 
             /* HttpKeepAlive */
-            if (!bool.TryParse(settings.Get(HttpServerSettingNames.HttpKeepAlive), out bool httpKeepAlive))
-            {
-                this.logger.Log(EventType.SettingsParsingError, "Unable to parse HttpKeepAlive '{0}'.", settings.Get(HttpServerSettingNames.HttpKeepAlive));
-                throw new ArgumentException("HttpKeepAlive");
-            }
-            this.httpKeepAlive = httpKeepAlive;
+            this.httpKeepAlive = settings.Core.HttpKeepAlive;
 
-            this.logger.Log(EventType.ServerSetup, "Set HttpKeepAlive to '{0}'.", httpKeepAlive);
+            this.logger?.Log(EventType.ServerSetup, "Set HttpKeepAlive to '{0}'.", httpKeepAlive);
+        }
+
+        private static string GetApplicationId()
+        {
+            return ((GuidAttribute)Assembly.GetExecutingAssembly().GetCustomAttributes(typeof(GuidAttribute), true)[0]).Value;
         }
     }
 }

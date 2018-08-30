@@ -11,11 +11,6 @@ namespace Batzill.Server.Core
 {
     public abstract class Operation
     {
-        public abstract int Priority
-        {
-            get;
-        }
-
         public abstract string Name
         {
             get;
@@ -31,11 +26,6 @@ namespace Batzill.Server.Core
             get; private set;
         }
 
-        protected HttpServerSettings settings
-        {
-            get; private set;
-        }        
-
         protected Operation()
         {
         }
@@ -43,13 +33,10 @@ namespace Batzill.Server.Core
         /// <summary>
         /// Used to initialize the operation before Executing.
         /// </summary>
-        /// <param name="logger">The logger instance.</param>
-        /// <param name="settings">The settings.</param>
         /// <param name="operationId">The Id of the operation</param>
-        public void Initialize(Logger logger, HttpServerSettings settings, string operationId)
+        public void Initialize(Logger logger, string operationId)
         {
-            this.logger = logger;
-            this.settings = settings.Clone();
+            this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
             this.ID = operationId;
         }
 
@@ -58,7 +45,7 @@ namespace Batzill.Server.Core
         /// </summary>
         /// <param name="logger">The logger instance.</param>
         /// <param name="settings">The settings.</param>
-        public virtual void InitializeClass(Logger logger, HttpServerSettings settings) { }
+        public virtual void InitializeClass(OperationSettings settings) { }
 
         public abstract bool Match(HttpContext context);
         public abstract void Execute(HttpContext context);

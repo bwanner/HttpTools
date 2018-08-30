@@ -1,22 +1,20 @@
-﻿using System;
+﻿using Batzill.Server.Core.Settings;
+using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Batzill.Server.Core
 {
-    public class OperationPriorityComparer : IComparer<Operation>
+    public class OperationPriorityComparer : IComparer<Tuple<int, Operation>>
     {
-        public int Compare(Operation x, Operation y)
+        public int Compare(Tuple<int, Operation> x, Tuple<int, Operation> y)
         {
-            if (x.Priority == y.Priority)
+            if (x.Item1 == y.Item1)
             {
-                return x.Name.CompareTo(y.Name);
+                return x.Item2.Name.CompareTo(y.Item2.Name);
             }
             else
             {
-                return x.Priority < y.Priority ? 1 : -1;
+                return x.Item1 < y.Item1 ? 1 : -1;
             }
         }
     }

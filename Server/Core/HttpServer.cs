@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Batzill.Server.Core
 {
-    public abstract class HttpServer : ISettingsChangable
+    public abstract class HttpServer
     {
         public abstract bool IsRunning
         {
@@ -35,7 +35,7 @@ namespace Batzill.Server.Core
 
         public bool Restart()
         {
-            this.logger.Log(EventType.SystemInformation, "Attempting to restart the HttpClientServer.");
+            this.logger?.Log(EventType.SystemInformation, "Attempting to restart the HttpClientServer.");
 
             return this.Stop() && this.Start();
         }
@@ -46,27 +46,27 @@ namespace Batzill.Server.Core
             {
                 try
                 {
-                    this.logger.Log(EventType.SystemInformation, "Attempting to start the HttpServer.");
+                    this.logger?.Log(EventType.SystemInformation, "Attempting to start the HttpServer.");
 
-                    this.logger.Log(EventType.SystemInformation, "Step 1: Load operations.");
-                    this.operationFactory.LoadOperations(this.settings);
+                    this.logger?.Log(EventType.SystemInformation, "Step 1: Load operations.");
+                    this.operationFactory.LoadOperations();
 
-                    this.logger.Log(EventType.SystemInformation, "Step 2: Start internal server.");
+                    this.logger?.Log(EventType.SystemInformation, "Step 2: Start internal server.");
                     this.StartInternal();
 
-                    this.logger.Log(EventType.SystemInformation, "Successfully started the HttpServer.");
+                    this.logger?.Log(EventType.SystemInformation, "Successfully started the HttpServer.");
 
                     return true;
                 }
                 catch (Exception ex)
                 {
-                    this.logger.Log(EventType.SystemError, "Unable to start HttpServer: {0}", ex.ToString());
+                    this.logger?.Log(EventType.SystemError, "Unable to start HttpServer: {0}", ex.ToString());
                     return false;
                 }
             }
             else
             {
-                this.logger.Log(EventType.SystemInformation, "Settings are in an invalid state, update settings and try again.");
+                this.logger?.Log(EventType.SystemInformation, "Settings are in an invalid state, update settings and try again.");
                 return false;
             }
         }
@@ -75,41 +75,41 @@ namespace Batzill.Server.Core
         {
             try
             {
-                this.logger.Log(EventType.SystemInformation, "Attempting to stop the HttpServer.");
+                this.logger?.Log(EventType.SystemInformation, "Attempting to stop the HttpServer.");
 
                 this.StopInternal();
                 
-                this.logger.Log(EventType.SystemInformation, "Successfully stopped the HttpServer.");
+                this.logger?.Log(EventType.SystemInformation, "Successfully stopped the HttpServer.");
 
                 return true;
             }
             catch (Exception ex)
             {
-                this.logger.Log(EventType.SystemError, "Unable to stop HttpServer: {0}", ex.ToString());
+                this.logger?.Log(EventType.SystemError, "Unable to stop HttpServer: {0}", ex.ToString());
                 return false;
             }
         }
 
         public bool ApplySettings(HttpServerSettings settings)
         {
-            this.logger.Log(EventType.ServerSetup, "Attempting to update server settings.");
+            this.logger?.Log(EventType.ServerSetup, "Attempting to update server settings.");
 
             if (settings == null)
             {
-                this.logger.Log(EventType.ServerSetup, "Provided settings are null, skip update.");
+                this.logger?.Log(EventType.ServerSetup, "Provided settings are null, skip update.");
                 return false;
             }
 
             bool startStopServer = this.IsRunning;
-            this.settings = settings.Clone();
+            this.settings = settings;
 
             if (startStopServer)
             {
-                this.logger.Log(EventType.ServerSetup, "HttpServer is running, attempting to stop the gateway for the settings update.");
+                this.logger?.Log(EventType.ServerSetup, "HttpServer is running, attempting to stop the gateway for the settings update.");
 
                 if (!this.Stop())
                 {
-                    this.logger.Log(EventType.ServerSetup, "HttpServer is still running, applying settings failed.");
+                    this.logger?.Log(EventType.ServerSetup, "HttpServer is still running, applying settings failed.");
                     return false;
                 }
             }
@@ -123,23 +123,23 @@ namespace Batzill.Server.Core
             }
             catch(Exception ex)
             {
-                this.logger.Log(EventType.SystemError, ex.ToString());
-                this.logger.Log(EventType.SystemError, "Error occured while applying settings, please check logs for more information.");
+                this.logger?.Log(EventType.SystemError, ex.ToString());
+                this.logger?.Log(EventType.SystemError, "Error occured while applying settings, please check logs for more information.");
                 this.correctConfigured = false;
             }
 
             if (this.correctConfigured && startStopServer)
             {
-                this.logger.Log(EventType.ServerSetup, "HttpServer was running before, attempting to start the gateway after the settings update.");
+                this.logger?.Log(EventType.ServerSetup, "HttpServer was running before, attempting to start the gateway after the settings update.");
                 if (!this.Start())
                 {
-                    this.logger.Log(EventType.ServerSetup, "Unable sto start server, applying settings failed.");
+                    this.logger?.Log(EventType.ServerSetup, "Unable sto start server, applying settings failed.");
                     return false;
                 }
             }
             else
             {
-                this.logger.Log(EventType.ServerSetup, "HttpServer is in stopped state.");
+                this.logger?.Log(EventType.ServerSetup, "HttpServer is in stopped state.");
             }
 
             return true;
@@ -149,7 +149,7 @@ namespace Batzill.Server.Core
         {
             string operationId = Guid.NewGuid().ToString();
 
-            this.logger.Log(
+            this.logger?.Log(
                 EventType.SystemInformation,
                 "Recieved new request {0} {1} HTTP{2}/{3} => id: {4}",
                 context.Request.HttpMethod,
@@ -162,17 +162,17 @@ namespace Batzill.Server.Core
             {
                 this.ProcessRequest(operationId, context);
 
-                this.logger.Log(EventType.SystemInformation, "Operation '{0}' finished successfully.", operationId);
+                this.logger?.Log(EventType.SystemInformation, "Operation '{0}' finished successfully.", operationId);
             }
             catch (Exception ex)
             {
-                this.logger.Log(EventType.SystemError, "Error executing operation '{0}': {1}", operationId, ex.Message);
+                this.logger?.Log(EventType.SystemError, "Error executing operation '{0}': {1}", operationId, ex.Message);
             }
             finally
             {
                 try
                 {
-                    this.logger.Log(EventType.SystemInformation, "Do a final header sync, stream flush and close the connection.");
+                    this.logger?.Log(EventType.SystemInformation, "Do a final header sync, stream flush and close the connection.");
 
                     if (context.SyncAllowed)
                     {
@@ -188,23 +188,42 @@ namespace Batzill.Server.Core
                 }
                 catch (Exception ex)
                 {
-                    this.logger.Log(EventType.SystemError, "Error finishing up operation '{0}': {1}", operationId, ex.Message);
+                    this.logger?.Log(EventType.SystemError, "Error finishing up operation '{0}': {1}", operationId, ex.Message);
                 }
             }
         }
 
         private void ProcessRequest(string operationId, HttpContext context)
         {
-            this.logger.Log(EventType.OperationLoading, "Find matching operation for request");
+            this.logger?.Log(EventType.OperationLoading, "Find matching operation for request");
 
             // create matching operation
             Operation operation = this.operationFactory.CreateMatchingOperation(context);
 
-            // initialize operation
-            OperationLogger logger = new OperationLogger(this.logger.logWriter, context.Request.RemoteEndpoint.Address.ToString(), operationId, operation.Name);
-            operation.Initialize(logger, settings.Clone(), operationId);
+            if(operation == null)
+            {
+                this.logger?.Log(EventType.OperationLoadingError, "No matching operation was found for Url '{0}'.", context.Request.Url);
 
-            logger.Log(
+                context.Response.SetDefaultValues();
+                context.Response.StatusCode = 404;
+                context.Response.WriteContent("No matching operation was found :(");
+
+                return;
+            }
+
+            // initialize logger
+            OperationLogger operationLogger = new OperationLogger(
+                logWriter: this.logger?.LogWriter,
+                clientIp: context.Request.RemoteEndpoint.Address.ToString(),
+                localPort: context.Request.LocalEndpoint.Port.ToString(),
+                operationId: operationId,
+                operationName: operation.Name,
+                url: context.Request.Url.PathAndQuery);
+
+            // initialize operation
+            operation.Initialize(operationLogger, operationId);
+
+            operationLogger?.Log(
                 EventType.OperationLoading, 
                 "Start executing operation for client '{0}: name: '{1}', id: '{2}', request: '{3}'", 
                 context.Request.RemoteEndpoint.Address, 
@@ -214,9 +233,10 @@ namespace Batzill.Server.Core
 
             DateTime startTime = DateTime.Now;
 
+            // execute operation
             operation.Execute(context);
 
-            this.logger.Log(EventType.OperationLoading, "Successfully finished operation '{0}' with id '{1}' after {2}s.", operation.Name, operation.ID, (DateTime.Now - startTime).TotalSeconds);
+            operationLogger?.Log(EventType.OperationLoading, "Successfully finished operation '{0}' with id '{1}' after {2}s.", operation.Name, operation.ID, (DateTime.Now - startTime).TotalSeconds);
         }
     }
 }

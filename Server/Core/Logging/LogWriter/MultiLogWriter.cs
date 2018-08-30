@@ -37,20 +37,6 @@ namespace Batzill.Server.Core.Logging
             }
         }
 
-        public bool ApplySettings(HttpServerSettings settings)
-        {
-            lock (this.logWriters)
-            {
-                bool result = true;
-                foreach (ILogWriter writer in this.logWriters)
-                {
-                    result &= writer.ApplySettings(settings);
-                }
-
-                return result;
-            }
-        }
-
         public void WriteLog(Log log)
         {
             lock (this.logWriters)

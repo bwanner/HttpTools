@@ -1,14 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Collections.Specialized;
-using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
-using System.Threading.Tasks;
 using Batzill.Server.Core.Logging;
 using Batzill.Server.Core.ObjectModel;
-using Batzill.Server.Core.Settings;
 
 namespace Batzill.Server.Core.Operations
 {
@@ -25,21 +21,7 @@ namespace Batzill.Server.Core.Operations
         private const int DefaultBufferSize = 8192;
         private const int DefaultWaitTimeInMs = -1;
 
-        public override int Priority
-        {
-            get
-            {
-                return 7;
-            }
-        }
-
-        public override string Name
-        {
-            get
-            {
-                return "Download";
-            }
-        }
+        public override string Name => "Download";
 
         public DownloadOperation() : base()
         {
@@ -49,7 +31,7 @@ namespace Batzill.Server.Core.Operations
         {
             context.Response.SetDefaultValues();
 
-            this.logger.Log(EventType.OperationInformation, "Got request to download data, try parsing size passed by client.");
+            this.logger?.Log(EventType.OperationInformation, "Got request to download data, try parsing size passed by client.");
 
             Match result = Regex.Match(context.Request.RawUrl, DownloadOperation.InputRegex, RegexOptions.IgnoreCase);
             if (result.Success && !string.IsNullOrEmpty(result.Groups[1].Value))
@@ -73,7 +55,7 @@ namespace Batzill.Server.Core.Operations
                             requestedDownloadSize *= 1 << 30;
                             break;
                         default:
-                            this.logger.Log(EventType.OperationError, "Unknown size unit '{0}'", requestedUnit);
+                            this.logger?.Log(EventType.OperationError, "Unknown size unit '{0}'", requestedUnit);
                             context.Response.WriteContent(string.Format("Unknown size unit '{0}'", requestedUnit));
                             return;
 
@@ -81,7 +63,7 @@ namespace Batzill.Server.Core.Operations
 
                     if (requestedDownloadSize > 34359738368) // = 32g
                     {
-                        this.logger.Log(EventType.OperationError, "File is to big '{0}'{1}, only supported up to 32GB.", inputNumber, requestedUnit);
+                        this.logger?.Log(EventType.OperationError, "File is to big '{0}'{1}, only supported up to 32GB.", inputNumber, requestedUnit);
                         context.Response.WriteContent(string.Format("File is to big '{0}'{1}, only supported up to 32GB.", inputNumber, requestedUnit));
                         return;
                     }
@@ -94,7 +76,7 @@ namespace Batzill.Server.Core.Operations
                     {
                         if(!Int32.TryParse(parameters["bufferSize"], out bufferSize) || bufferSize < 1 || bufferSize > 33554432)
                         {
-                            this.logger.Log(EventType.OperationError, "Unable to parse chunk size '{0}' to long.", parameters["bufferSize"]);
+                            this.logger?.Log(EventType.OperationError, "Unable to parse chunk size '{0}' to long.", parameters["bufferSize"]);
                             context.Response.WriteContent(string.Format("Unable to parse chunk size '{0}' to long.  Please provide the chunk size in number of bytes within [1, 32MB]", parameters["bufferSize"]));
 
                             return;
@@ -106,7 +88,7 @@ namespace Batzill.Server.Core.Operations
                     {
                         if (!Int32.TryParse(parameters["wait"], out waitTime) || waitTime < 1 || waitTime > 30000)
                         {
-                            this.logger.Log(EventType.OperationError, "Invalid value for wait time: '{0}'.", parameters["wait"]);
+                            this.logger?.Log(EventType.OperationError, "Invalid value for wait time: '{0}'.", parameters["wait"]);
                             context.Response.WriteContent(string.Format("Invalid value for wait time: '{0}'. Please provide a value in ms within [1, 30000].", parameters["wait"]));
 
                             return;
@@ -115,7 +97,7 @@ namespace Batzill.Server.Core.Operations
 
                     bool chunked = string.Equals("true", parameters["chunked"], StringComparison.InvariantCultureIgnoreCase);
 
-                    this.logger.Log(EventType.OperationInformation, "Will return file of size: {0}{1}, bufferSize: '{2}', chunked: '{3}', wait: '{4}'.", inputNumber, requestedUnit, bufferSize , chunked, waitTime);
+                    this.logger?.Log(EventType.OperationInformation, "Will return file of size: {0}{1}, bufferSize: '{2}', chunked: '{3}', wait: '{4}'.", inputNumber, requestedUnit, bufferSize , chunked, waitTime);
 
                     context.Response.SetHeaderValue("Content-Type", "application/octet-stream");
                     context.Response.SetHeaderValue("Content-Disposition", String.Format("attachment;filename=\"TestFile_{0}{1}.file\"", inputNumber, requestedUnit));
@@ -148,13 +130,13 @@ namespace Batzill.Server.Core.Operations
                 }
                 else
                 {
-                    this.logger.Log(EventType.OperationError, "Unable to parse '{0}' to long.", result.Groups[1].Value);
+                    this.logger?.Log(EventType.OperationError, "Unable to parse '{0}' to long.", result.Groups[1].Value);
                     context.Response.WriteContent(string.Format("Unable to parse '{0}' to long.", result.Groups[1].Value));
                 }
             }
             else
             {
-                this.logger.Log(EventType.OperationInformation, "No number passed, return info page.");
+                this.logger?.Log(EventType.OperationInformation, "No number passed, return info page.");
 
                 context.Response.WriteContent("Call '/download/[number](unit)' to have the server return [number] (unit=b/kb/mb/gb, default b) of data. (Max 32GB)");
             }
