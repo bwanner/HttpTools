@@ -4,6 +4,7 @@ using Batzill.Server.Core.ObjectModel;
 using Batzill.Server.Core.Settings;
 using System.Text.RegularExpressions;
 using Batzill.Server.Core.Settings.Custom.Operations;
+using Batzill.Server.Core.Authentication;
 
 namespace Batzill.Server.Core.Operations
 {
@@ -13,10 +14,10 @@ namespace Batzill.Server.Core.Operations
 
         public override string Name => "Id";
 
-        public IdOperation() : base()
+        public IdOperation(Logger logger = null) : base(logger)
         {
         }
-        public override void InitializeClass(OperationSettings settings)
+        public override void InitializeClass(OperationSettings settings, IAuthenticationManager authManager)
         {
             if (!(settings is IdOperationSettings))
             {
@@ -27,7 +28,7 @@ namespace Batzill.Server.Core.Operations
         }
 
 
-        public override void Execute(HttpContext context)
+        protected override void ExecuteInternal(HttpContext context, IAuthenticationManager authManager)
         {
             context.Response.SetDefaultValues();
 

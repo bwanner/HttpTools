@@ -7,26 +7,29 @@ using Batzill.Server.Core.ObjectModel;
 using System.Threading;
 using Batzill.Server.Core.Settings;
 using Batzill.Server.Core.Settings.Custom.Operations;
+using Batzill.Server.Core.Authentication;
 
 namespace Batzill.Server.Core.Operations
 {
-    public class StreamLogsOperation : Operation
+    public class StreamLogsOperation : AuthenticationRequiredOperation
     {
         private const string InputParameterClient = "client";
         private const string InputParameterPort = "port";
         private const string InputParameterOperation = "operation";
         private const string InputParameterUrl = "url";
+        private const string InputParameterType = "type";
+        private const string InputParameterMessage = "message";
 
         private DateTime lastLogTime;
         private bool failed = true;
 
         public override string Name => "StreamLogs";
 
-        public StreamLogsOperation() : base()
+        public StreamLogsOperation(Logger logger = null) : base(logger)
         {
         }
 
-        public override void Execute(HttpContext context)
+        protected override void ExecuteAfterAuthentication(HttpContext context, IAuthenticationManager authManager)
         {
             if (!(this.logger?.LogWriter is MultiLogWriter))
             {
@@ -76,6 +79,18 @@ namespace Batzill.Server.Core.Operations
                         filters.Add((log) =>
                         {
                             return log is OperationLog && Regex.IsMatch((log as OperationLog).Url, parameters[parameter], RegexOptions.IgnoreCase);
+                        });
+                        break;
+                    case StreamLogsOperation.InputParameterType:
+                        filters.Add((log) =>
+                        {
+                            return log is OperationLog && Regex.IsMatch((log as OperationLog).EventType.ToString(), parameters[parameter], RegexOptions.IgnoreCase);
+                        });
+                        break;
+                    case StreamLogsOperation.InputParameterMessage:
+                        filters.Add((log) =>
+                        {
+                            return log is OperationLog && Regex.IsMatch((log as OperationLog).Message.ToString(), parameters[parameter], RegexOptions.IgnoreCase);
                         });
                         break;
                     default:

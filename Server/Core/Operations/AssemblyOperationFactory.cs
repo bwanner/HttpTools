@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using Batzill.Server.Core.Authentication;
 using Batzill.Server.Core.Logging;
 using Batzill.Server.Core.ObjectModel;
 using Batzill.Server.Core.Operations;
@@ -15,12 +16,14 @@ namespace Batzill.Server.Core
     {
         private Logger logger;
         private HttpServerSettings settings;
+        private IAuthenticationManager authManager;
         private SortedSet<Tuple<int, Operation>> operations;
 
-        public AssemblyOperationFactory(Logger logger, HttpServerSettings settings)
+        public AssemblyOperationFactory(Logger logger, HttpServerSettings settings, IAuthenticationManager authManager)
         {
             this.logger = logger;
             this.settings = settings;
+            this.authManager = authManager;
 
             this.operations = new SortedSet<Tuple<int, Operation>>(new OperationPriorityComparer());
         }
@@ -32,7 +35,7 @@ namespace Batzill.Server.Core
                 this.logger?.Log(EventType.OperationLoading, "Attempting to load all available operations.");
 
                 var operationsTypes = (from operation in Assembly.GetExecutingAssembly().GetTypes()
-                                       where operation.IsClass && operation.IsSubclassOf(typeof(Operation))
+                                       where operation.IsClass && operation.IsSubclassOf(typeof(Operation)) && operation.IsAbstract == false
                                        select operation).ToList();
 
                 this.logger?.Log(EventType.OperationLoading, "Found {0} operations in the assembly .", operationsTypes.Count);
@@ -70,7 +73,7 @@ namespace Batzill.Server.Core
 
                         this.logger?.Log(EventType.OperationLoading, "Attempting to execute one-time initialization for operation '{0}'.", operation.Name);
 
-                        operation.InitializeClass(operationSettings);
+                        operation.InitializeClass(operationSettings, this.authManager);
 
                         this.logger?.Log(EventType.OperationLoading, "Operation loaded. Name: '{0}', Priority: '{1}'.", operation.Name, operationSettings.Priority);
 
@@ -117,7 +120,8 @@ namespace Batzill.Server.Core
 
         private Operation CreateInstance(Type operationType)
         {
-            return (Operation)Activator.CreateInstance(operationType);
+            /* Create the operation instance with the default logger to enable logging during operation initialization */
+            return (Operation)Activator.CreateInstance(operationType, this.logger);
         }
     }
 }

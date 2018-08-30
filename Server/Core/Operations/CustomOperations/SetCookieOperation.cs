@@ -6,6 +6,7 @@ using Batzill.Server.Core.Settings;
 using System.Text.RegularExpressions;
 using System.Collections.Specialized;
 using Batzill.Server.Core.Settings.Custom.Operations;
+using Batzill.Server.Core.Authentication;
 
 namespace Batzill.Server.Core.Operations
 {
@@ -15,11 +16,11 @@ namespace Batzill.Server.Core.Operations
 
         public override string Name => "SetCookie";
 
-        public SetCookieOperation() : base()
+        public SetCookieOperation(Logger logger = null) : base(logger)
         {
         }
 
-        public override void Execute(HttpContext context)
+        protected override void ExecuteInternal(HttpContext context, IAuthenticationManager authManager)
         {
             context.Response.SetDefaultValues();
             

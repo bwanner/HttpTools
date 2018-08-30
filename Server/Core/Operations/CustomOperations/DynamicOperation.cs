@@ -9,6 +9,8 @@ using System.Collections.Concurrent;
 using System.Web;
 using HttpContext = Batzill.Server.Core.ObjectModel.HttpContext;
 using Newtonsoft.Json;
+using Batzill.Server.Core.Authentication;
+using System.Linq;
 
 namespace Batzill.Server.Core.Operations
 {
@@ -22,25 +24,16 @@ namespace Batzill.Server.Core.Operations
         private const string InputParameterStatusCode = "statuscode";
         private const string InputParameterHeader = "header";
         private const string InputParameterBody = "body";
-
-        public class DynamicResponse
-        {
-            [JsonProperty(Required = Required.Always)]
-            public int StatusCode;
-            public List<Tuple<string, string>> Headers;
-            public string Body;
-        }
-
-        private static Logger Logger;
+        
         private static ConcurrentDictionary<string, DynamicResponse> Responses;
 
         public override string Name => "Dynamic";
 
-        public DynamicOperation() : base()
+        public DynamicOperation(Logger logger = null) : base(logger)
         {
         }
 
-        public override void InitializeClass(OperationSettings settings)
+        public override void InitializeClass(OperationSettings settings, IAuthenticationManager authManager)
         {
             if (!(settings is DynamicOperationSettings))
             {
@@ -49,20 +42,19 @@ namespace Batzill.Server.Core.Operations
 
             DynamicOperationSettings customSettings = settings as DynamicOperationSettings;
 
-            DynamicOperation.Logger = this.logger;
             DynamicOperation.Responses = new ConcurrentDictionary<string, DynamicResponse>();
 
             if (customSettings.Responses != null)
             {
                 foreach (var responseEntry in customSettings.Responses)
                 {
-                    DynamicOperation.Logger?.Log(EventType.OperationInformation, "Create DynamicResponse for id '{0}' using '{1}'.", responseEntry.Id, JsonConvert.SerializeObject(responseEntry.Response, Formatting.Indented));
+                    this.logger?.Log(EventType.OperationInformation, "Create DynamicResponse for id '{0}' using '{1}'.", responseEntry.Id, JsonConvert.SerializeObject(responseEntry.Response, Formatting.Indented));
                     DynamicOperation.Responses[responseEntry.Id] = responseEntry.Response;
                 }
             }
         }
 
-        public override void Execute(HttpContext context)
+        protected override void ExecuteInternal(HttpContext context, IAuthenticationManager authManager)
         {
             string id;
 
@@ -99,12 +91,12 @@ namespace Batzill.Server.Core.Operations
             this.ClearResponse(context, id);
         }
 
-        private static DynamicResponse CreateResponse(string responseLine)
+        private DynamicResponse CreateResponse(string responseLine)
         {
             DynamicResponse response = new DynamicResponse()
             {
                 StatusCode = 0,
-                Headers = new List<Tuple<string, string>>(),
+                Headers = new List<DynamicResponse.Header>(),
                 Body = null
             };
 
@@ -113,17 +105,19 @@ namespace Batzill.Server.Core.Operations
             /* Parse StatusCode */
             if (string.IsNullOrEmpty(parameters[DynamicOperation.InputParameterStatusCode]))
             {
-                DynamicOperation.Logger?.Log(EventType.OperationError, "No status code provided.");
+                this.logger?.Log(EventType.OperationError, "No status code provided.");
                 throw new InvalidOperationException("No status code provided!");
             }
 
-            if (!Int32.TryParse(parameters[DynamicOperation.InputParameterStatusCode], out response.StatusCode) || response.StatusCode < 100 || response.StatusCode > 1000)
+            if (!Int32.TryParse(parameters[DynamicOperation.InputParameterStatusCode], out int statusCode) || statusCode < 100 || statusCode > 1000)
             {
-                DynamicOperation.Logger?.Log(EventType.OperationError, "Invalid status code privided: {0}.", parameters[DynamicOperation.InputParameterStatusCode]);
+                this.logger?.Log(EventType.OperationError, "Invalid status code privided: {0}.", parameters[DynamicOperation.InputParameterStatusCode]);
                 throw new InvalidOperationException("Invalid status code provided!");
             }
 
-            DynamicOperation.Logger?.Log(EventType.OperationInformation, "StatusCode: '{0}'.", response.StatusCode);
+            response.StatusCode = statusCode;
+
+            this.logger?.Log(EventType.OperationInformation, "StatusCode: '{0}'.", response.StatusCode);
 
             /* Parse Header */
             if (!string.IsNullOrEmpty(parameters[DynamicOperation.InputParameterHeader]))
@@ -134,7 +128,7 @@ namespace Batzill.Server.Core.Operations
 
                     if (!res.Success)
                     {
-                        DynamicOperation.Logger?.Log(EventType.OperationError, "Invalid header privided: {0}.", header);
+                        this.logger?.Log(EventType.OperationError, "Invalid header privided: {0}.", header);
                         throw new InvalidOperationException("Invalid header provided!");
                     }
 
@@ -143,20 +137,24 @@ namespace Batzill.Server.Core.Operations
 
                     if (string.IsNullOrEmpty(name))
                     {
-                        DynamicOperation.Logger?.Log(EventType.OperationError, "Invalid header privided. Header name can't be empty.", header);
+                        this.logger?.Log(EventType.OperationError, "Invalid header privided. Header name can't be empty.", header);
                         throw new InvalidOperationException("Invalid header provided!");
                     }
 
-                    response.Headers.Add(new Tuple<string, string>(name, value));
+                    response.Headers.Add(new DynamicResponse.Header()
+                    {
+                        Name = name,
+                        Value = value
+                    });
 
-                    DynamicOperation.Logger?.Log(EventType.OperationInformation, "Header: '{0}: {1}'.", name, value);
+                    this.logger?.Log(EventType.OperationInformation, "Header: '{0}: {1}'.", name, value);
                 }
             }
 
             /* Parse Body */
             response.Body = parameters[DynamicOperation.InputParameterBody];
 
-            DynamicOperation.Logger?.Log(EventType.OperationInformation, "Body: '{0}'.", response.Body);
+            this.logger?.Log(EventType.OperationInformation, "Body: '{0}'.", response.Body);
 
             return response;
         }
@@ -173,14 +171,19 @@ namespace Batzill.Server.Core.Operations
 
                 return;
             }
-            
+
+            this.logger?.Log(EventType.OperationInformation, "Found reponse for id '{0}': '{1}'.", id, JsonConvert.SerializeObject(response, Formatting.Indented));
+
             /* Set status code */
             context.Response.StatusCode = response.StatusCode;
 
             /* Set headers */
-            foreach (Tuple<string, string> header in response.Headers)
+            if (response.Headers != null)
             {
-                context.Response.Headers.Add(header.Item1, header.Item2);
+                foreach (DynamicResponse.Header header in response.Headers)
+                {
+                    context.Response.Headers.Add(header.Name, header.Value);
+                }
             }
 
             /* Set body */
@@ -192,7 +195,7 @@ namespace Batzill.Server.Core.Operations
 
         private void SetupResponse(HttpContext context, string id, string responseLine)
         {
-            DynamicResponse response = DynamicOperation.CreateResponse(responseLine);
+            DynamicResponse response = this.CreateResponse(responseLine);
             DynamicOperation.Responses[id] = response;
 
             StringBuilder sb = new StringBuilder();
@@ -201,7 +204,7 @@ namespace Batzill.Server.Core.Operations
             sb.AppendLine("Headers:");
             foreach (var header in response.Headers)
             {
-                sb.AppendLine($"    {header.Item1}: {header.Item2}");
+                sb.AppendLine($"    {header.Name}: {header.Value}");
             }
             sb.AppendLine("Body:");
             sb.AppendLine($"    {response.Body}");
@@ -243,6 +246,64 @@ namespace Batzill.Server.Core.Operations
             return Regex.IsMatch(context.Request.RawUrl, DynamicOperation.InputRegexGet, RegexOptions.IgnoreCase)
                    || Regex.IsMatch(context.Request.RawUrl, DynamicOperation.InputRegexSet, RegexOptions.IgnoreCase)
                    || Regex.IsMatch(context.Request.RawUrl, DynamicOperation.InputRegexClear, RegexOptions.IgnoreCase);
+        }
+
+        public class DynamicResponse
+        {
+            [JsonProperty(Required = Required.Always)]
+            public int StatusCode
+            {
+                get; set;
+            }
+
+            public List<Header> Headers
+            {
+                get; set;
+            }
+
+            public string Body
+            {
+                get; set;
+            }
+
+            public void Validate()
+            {
+                if (this.StatusCode < 100 || this.StatusCode > 999)
+                {
+                    throw new IndexOutOfRangeException($"'{nameof(this.StatusCode)}' must be within [100, 999]!");
+                }
+                
+                if (this.Headers != null)
+                {
+                    this.Headers.ForEach((h) => h.Validate());
+                }
+            }
+
+            public class Header
+            {
+                public string Name
+                {
+                    get; set;
+                }
+
+                public string Value
+                {
+                    get; set;
+                }
+
+                public void Validate()
+                {
+                    if (string.IsNullOrEmpty(this.Name))
+                    {
+                        throw new NullReferenceException($"'{nameof(this.Name)}' can't be null or empty!");
+                    }
+
+                    if (string.IsNullOrEmpty(this.Value))
+                    {
+                        throw new NullReferenceException($"'{nameof(this.Value)}' can't be null or empty!");
+                    }
+                }
+            }
         }
     }
 }

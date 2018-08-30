@@ -13,6 +13,7 @@ using System.Threading;
 using Newtonsoft.Json;
 using System.Runtime.InteropServices;
 using System.Reflection;
+using Batzill.Server.Core.Authentication;
 
 namespace Batzill.Server
 {
@@ -34,8 +35,8 @@ namespace Batzill.Server
 
         private bool httpKeepAlive;
 
-        public HttpClientServer(Logger logger, IOperationFactory operationFactory, HttpServerSettings settings, ISSLBindingHelper sslBindingHelper)
-            : base(logger, operationFactory)
+        public HttpClientServer(Logger logger, IOperationFactory operationFactory, IAuthenticationManager authManager, HttpServerSettings settings, ISSLBindingHelper sslBindingHelper)
+            : base(logger, operationFactory, authManager)
         {
             this.listener = new HttpListener();
             this.sslBindingHelper = sslBindingHelper;

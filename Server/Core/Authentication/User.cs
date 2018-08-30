@@ -4,11 +4,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Batzill.Server.Core.Operations.CustomOperations.Authentication
+namespace Batzill.Server.Core.Authentication
 {
     public class User
     {
-        public Credentials Credentials
+        public string Id
         {
             get; set;
         }

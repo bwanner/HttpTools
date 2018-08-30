@@ -17,6 +17,11 @@
     "ConnectionLimit": 2222,
     "HttpKeepAlive": true
   },
+  "Authentication": {
+    "HttpsOnly": true,
+    "SessionRefresh": true,
+    "SessionDuration": 1
+  },
   "LogWriters": [
     {
       "Name": "Console"
@@ -42,25 +47,39 @@
             "StatusCode": 200,
             "Headers": [
               {
-                "item1": "headerName",
-                "item2": "headerValue"
+                "Name": "headerName",
+                "Value": "headerValue"
               }
             ],
             "Body": "whatever12324"
+          }
+        },
+        {
+          "id": "fqdn",
+          "response": {
+            "StatusCode": 200,
+            "Body": "jobatzil-vmmain.westus2.cloudapp.azure.com"
           }
         }
       ]
     },
     {
-      "Name": "Authentication",
+      "Name": "UserLogin",
       "Priority": 2,
       "HttpsOnly": true,
-      "sessionDuration": 1,
       "Credentials": [
         {
           "UserName": "jobatzil",
-          "KeyHash": "900150983cd24fb0d6963f7d28e17f72"
+          "KeyHash": "9d7b44deffd5fcfa20b036a4cf1d2cad"
         }
+      ]
+    },
+    {
+      "Name": "ClientLogin",
+      "Priority": 2,
+      "HttpsOnly": true,
+      "WhiteList": [
+        "127.0.0.1"
       ]
     },
     {
@@ -69,7 +88,8 @@
     },
     {
       "Name": "Machine",
-      "Priority": 1
+      "Priority": 1,
+      "AuthenticationRequired": true
     },
     {
       "Name": "Id",
@@ -90,7 +110,8 @@
     },
     {
       "Name": "StreamLogs",
-      "Priority": 1
+      "Priority": 1,
+      "AuthenticationRequired": true
     },
     {
       "Name": "Wait",

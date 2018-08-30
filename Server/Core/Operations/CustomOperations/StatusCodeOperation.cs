@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Text.RegularExpressions;
+using Batzill.Server.Core.Authentication;
 using Batzill.Server.Core.Logging;
 using Batzill.Server.Core.ObjectModel;
 using Batzill.Server.Core.Settings;
@@ -13,11 +14,11 @@ namespace Batzill.Server.Core.Operations
 
         public override string Name => "StatusCode";
 
-        public StatusCodeOperation() : base()
+        public StatusCodeOperation(Logger logger = null) : base(logger)
         {
         }
 
-        public override void Execute(HttpContext context)
+        protected override void ExecuteInternal(HttpContext context, IAuthenticationManager authManager)
         {
             context.Response.SetDefaultValues();
 

@@ -1,4 +1,5 @@
-﻿using Batzill.Server.Core.Logging;
+﻿using Batzill.Server.Core.Authentication;
+using Batzill.Server.Core.Logging;
 using Batzill.Server.Core.ObjectModel;
 using Batzill.Server.Core.Settings;
 using System;
@@ -15,6 +16,7 @@ namespace Batzill.Server.Core
 
         private TaskFactory taskfactory;
         private IOperationFactory operationFactory;
+        private IAuthenticationManager authManager;
 
         private Task mainTask;
         private int maxConcurrentConnections;
@@ -23,10 +25,11 @@ namespace Batzill.Server.Core
         protected Logger logger;
         protected HttpServerSettings settings;
 
-        protected HttpServer(Logger logger, IOperationFactory operationFactory)
+        protected HttpServer(Logger logger, IOperationFactory operationFactory, IAuthenticationManager authManager)
         {
             this.logger = logger;
             this.operationFactory = operationFactory;
+            this.authManager = authManager;
         }
 
         protected abstract void StartInternal();
@@ -234,7 +237,7 @@ namespace Batzill.Server.Core
             DateTime startTime = DateTime.Now;
 
             // execute operation
-            operation.Execute(context);
+            operation.Execute(context, this.authManager);
 
             operationLogger?.Log(EventType.OperationLoading, "Successfully finished operation '{0}' with id '{1}' after {2}s.", operation.Name, operation.ID, (DateTime.Now - startTime).TotalSeconds);
         }

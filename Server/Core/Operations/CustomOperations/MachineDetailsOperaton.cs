@@ -4,26 +4,19 @@ using Batzill.Server.Core.ObjectModel;
 using Batzill.Server.Core.Settings;
 using System.Text.RegularExpressions;
 using Batzill.Server.Core.Settings.Custom.Operations;
+using Batzill.Server.Core.Authentication;
 
 namespace Batzill.Server.Core.Operations
 {
-    public class MachineDetailsOperaton : Operation
+    public class MachineDetailsOperaton : AuthenticationRequiredOperation
     {
         public override string Name => "Machine";
 
-        public MachineDetailsOperaton() : base()
+        public MachineDetailsOperaton(Logger logger = null) : base(logger)
         {
         }
 
-        //public override void InitializeClass(OperationSettings settings)
-        //{
-        //    if (!(settings is IdOperationSettings))
-        //    {
-        //        throw new ArgumentException($"Type '{settings.GetType()}' is invalid for this operation.");
-        //    }
-        //}
-
-        public override void Execute(HttpContext context)
+        protected override void ExecuteAfterAuthentication(HttpContext context, IAuthenticationManager authManager)
         {
             context.Response.SetDefaultValues();
 
@@ -31,11 +24,6 @@ namespace Batzill.Server.Core.Operations
 
 
             this.logger?.Log(EventType.OperationInformation, "Check if request is authenticated");
-
-            if(!AuthenticationOperation.HandleAuthentication(context))
-            {
-                return;
-            }
 
             this.logger?.Log(EventType.OperationInformation, "Gathering all machine details ...");
 

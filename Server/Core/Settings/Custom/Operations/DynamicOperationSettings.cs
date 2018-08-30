@@ -45,10 +45,7 @@ namespace Batzill.Server.Core.Settings.Custom.Operations
                     throw new NullReferenceException($"'{nameof(this.Response)}' can't be null!");
                 }
 
-                if (this.Response.StatusCode < 100 || this.Response.StatusCode > 999)
-                {
-                    throw new IndexOutOfRangeException($"'{nameof(this.Response.StatusCode)}' must be within [100, 999]!");
-                }
+                this.Response.Validate();
             }
         }
     }

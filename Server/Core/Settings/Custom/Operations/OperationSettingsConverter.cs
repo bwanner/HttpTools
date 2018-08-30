@@ -18,10 +18,15 @@ namespace Batzill.Server.Core.Settings.Custom.Operations
             {
                 factoryMethods = new Dictionary<string, Func<OperationSettings>>(StringComparer.InvariantCultureIgnoreCase)
                 {
+                    // Default AuthenticationRequired settings
+                    { new StreamLogsOperation().Name, () => new AuthenticationRequiredOperationSettings() },
+                    { new MachineDetailsOperaton().Name, () => new AuthenticationRequiredOperationSettings() },
+
                     // Custom settings
                     { new DynamicOperation().Name, () => new DynamicOperationSettings() },
                     { new IdOperation().Name, () => new IdOperationSettings() },
-                    { new AuthenticationOperation().Name, () => new AuthenticationOperationSettings() }
+                    { new UserLoginOperation().Name, () => new UserLoginOperationSettings() },
+                    { new ClientLoginOperation().Name, () => new ClientLoginOperationSettings() }
                 };
             }
 

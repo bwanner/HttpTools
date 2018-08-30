@@ -58,12 +58,14 @@ namespace Batzill.Server.Core.Logging
 
         // Class for up to 0x21fffff
         OperationInformation = 0x2100000,
+        OperationAuthentication = 0x2100001,
 
         // Class for up to 0x22fffff
         OperationWarning = 0x2200000,
 
         // Class for up to 0x23fffff
-        OperationError = 0x2300000
+        OperationError = 0x2300000,
+        OperationAuthenticationError = 0x2300001
 
         #endregion
     }

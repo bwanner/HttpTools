@@ -11,6 +11,11 @@ namespace Batzill.Server.Core.Settings
         {
             get; set;
         }
+        
+        public HttpServerSettingsAuthentication Authentication
+        {
+            get; set;
+        }
 
         [JsonProperty(Required = Required.Always)]
         public List<LogWriterSettings> LogWriters

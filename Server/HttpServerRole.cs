@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using System.IO;
 using Batzill.Server.Core.SSLBindingHelper;
 using Batzill.Server.Core.Settings.Custom.Operations;
+using Batzill.Server.Core.Authentication;
 
 namespace Batzill.Server
 {
@@ -20,6 +21,7 @@ namespace Batzill.Server
         private static Logger logger;
         private static HttpServer httpServer;
         private static IOperationFactory operationFactory;
+        private static IAuthenticationManager authManager;
         private static HttpServerSettingsProvider settingsProvider;
 
         static void Main(string[] args)
@@ -75,13 +77,17 @@ namespace Batzill.Server
             // setup regular logging
             HttpServerRole.SetupLogging();
 
+            // setup authentication manager
+            HttpServerRole.authManager = new AuthenticationManager(HttpServerRole.settingsProvider.Settings);
+
             // setup operation factory
-            HttpServerRole.operationFactory = new AssemblyOperationFactory(HttpServerRole.logger, HttpServerRole.settingsProvider.Settings);
+            HttpServerRole.operationFactory = new AssemblyOperationFactory(HttpServerRole.logger, HttpServerRole.settingsProvider.Settings, HttpServerRole.authManager);
 
             // setup httpServer
             HttpServerRole.httpServer = new HttpClientServer(
                 HttpServerRole.logger,
                 HttpServerRole.operationFactory,
+                HttpServerRole.authManager,
                 HttpServerRole.settingsProvider.Settings,
                 new NetshWrapper(HttpServerRole.logger));
         }

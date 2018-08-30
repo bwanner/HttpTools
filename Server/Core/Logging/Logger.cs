@@ -22,5 +22,10 @@ namespace Batzill.Server.Core.Logging
         }
 
         public abstract void Log(EventType type, string message = "");
+
+        internal void Log(object healthEvent)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
