@@ -88,7 +88,6 @@
     <Compile Include="Core\Operations\CustomOperations\DownloadOperation.cs" />
     <Compile Include="Core\Operations\CustomOperations\ClientLoginOperation.cs" />
     <Compile Include="Core\Operations\CustomOperations\UserLoginOperation.cs" />
-    <Compile Include="Core\Operations\AuthenticationRequiredOperation.cs" />
     <Compile Include="Core\Operations\CustomOperations\MachineDetailsOperaton.cs" />
     <Compile Include="Core\Operations\CustomOperations\IdOperation.cs" />
     <Compile Include="Core\Operations\CustomOperations\SetCookieOperation.cs" />
@@ -97,7 +96,6 @@
     <Compile Include="Core\Settings\Custom\LogWriter\OperationLogWriterSettings.cs" />
     <Compile Include="Core\Settings\Custom\LogWriter\FileLogWriterSettings.cs" />
     <Compile Include="Core\Settings\Custom\LogWriter\LogWriterSettingsConverter.cs" />
-    <Compile Include="Core\Settings\Custom\Operations\AuthenticationRequiredOperationSettings.cs" />
     <Compile Include="Core\Settings\Custom\Operations\ClientLoginOperationSettings.cs" />
     <Compile Include="Core\Settings\Custom\Operations\UserLoginOperationSettings.cs" />
     <Compile Include="Core\Settings\Custom\Operations\DynamicOperationSettings.cs" />

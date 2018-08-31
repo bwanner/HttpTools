@@ -9,11 +9,6 @@ namespace Batzill.Server.Core.Authentication
 {
     public class AuthenticationManager : IAuthenticationManager
     {
-        public bool HttpsOnly
-        {
-            get; private set;
-        }
-
         private ConcurrentBag<User> users;
         private ConcurrentDictionary<string, User> userIdMapping;
         private ConcurrentDictionary<string, User> accessTokenMapping;
@@ -24,7 +19,6 @@ namespace Batzill.Server.Core.Authentication
         public AuthenticationManager(HttpServerSettings settings)
         {
             this.sessionValidityInMinutes = settings.Authentication.SessionDuration;
-            this.HttpsOnly = settings.Authentication.HttpsOnly;
             this.SessionRefreshAllowed = settings.Authentication.SessionRefresh;
 
             this.users = new ConcurrentBag<User>();

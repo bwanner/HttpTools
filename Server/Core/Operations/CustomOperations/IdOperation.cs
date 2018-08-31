@@ -17,7 +17,8 @@ namespace Batzill.Server.Core.Operations
         public IdOperation(Logger logger = null) : base(logger)
         {
         }
-        public override void InitializeClass(OperationSettings settings, IAuthenticationManager authManager)
+
+        protected override void InitializeClassInternal(OperationSettings settings, IAuthenticationManager authManager)
         {
             if (!(settings is IdOperationSettings))
             {

@@ -8,7 +8,7 @@ using Batzill.Server.Core.Authentication;
 
 namespace Batzill.Server.Core.Operations
 {
-    public class MachineDetailsOperaton : AuthenticationRequiredOperation
+    public class MachineDetailsOperaton : Operation
     {
         public override string Name => "Machine";
 
@@ -16,7 +16,7 @@ namespace Batzill.Server.Core.Operations
         {
         }
 
-        protected override void ExecuteAfterAuthentication(HttpContext context, IAuthenticationManager authManager)
+        protected override void ExecuteInternal(HttpContext context, IAuthenticationManager authManager)
         {
             context.Response.SetDefaultValues();
 

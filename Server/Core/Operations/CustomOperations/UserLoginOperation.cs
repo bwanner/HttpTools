@@ -26,7 +26,7 @@ namespace Batzill.Server.Core.Operations
         {
         }
 
-        public override void InitializeClass(OperationSettings settings, IAuthenticationManager authManager)
+        protected override void InitializeClassInternal(OperationSettings settings, IAuthenticationManager authManager)
         {
             if (!(settings is UserLoginOperationSettings))
             {
@@ -60,7 +60,7 @@ namespace Batzill.Server.Core.Operations
                 this.logger?.Log(EventType.OperationError, "Authentication is only enabled for https while connection to client is http.");
 
                 context.Response.StatusCode = 403;
-                context.Response.WriteContent("Authentication is only enabled for https.");
+                context.Response.WriteContent("User login is only enabled for https.");
 
                 return;
             }
@@ -132,7 +132,7 @@ namespace Batzill.Server.Core.Operations
 
             this.logger?.Log(EventType.OperationInformation, "Authentication was successful, returning access token.");
 
-            context.Response.Cookies.Add(new System.Net.Cookie(AuthenticationRequiredOperation.AccessTokenName, accessToken)
+            context.Response.Cookies.Add(new System.Net.Cookie(Operation.AccessTokenName, accessToken)
             {
                 Expires = expirationDate,
                 Path = "/"

@@ -1,17 +1,19 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Collections.Concurrent;
 using Batzill.Server.Core.Authentication;
 using Batzill.Server.Core.Logging;
 using Batzill.Server.Core.ObjectModel;
 using Batzill.Server.Core.Settings;
+using Newtonsoft.Json;
 
 namespace Batzill.Server.Core
 {
     public abstract class Operation
     {
+        public const string AccessTokenName = "AccessToken";
+
+        private static ConcurrentDictionary<Type, AuthenticationConfiguration> AuthConfigs = new ConcurrentDictionary<Type, AuthenticationConfiguration>();
+
         public abstract string Name
         {
             get;
@@ -43,8 +45,97 @@ namespace Batzill.Server.Core
             this.ID = operationId;
         }
 
+        public void InitializeClass(OperationSettings settings, IAuthenticationManager authManager)
+        {
+            Operation.AuthConfigs[this.GetType()] = new AuthenticationConfiguration()
+            {
+                AuthenticationRequired = settings.AuthenticationRequired,
+                HttpsOnly = settings.HttpsOnly
+            };
+            
+            try
+            {
+                this.InitializeClassInternal(settings, authManager);
+            }
+            catch (Exception ex)
+            {
+                /* Log exception in operation logs */
+                this.logger?.Log(EventType.OperationClassInitializationError, $"Operation initialization failed with exception '{ex}'.");
+                throw ex;
+            }
+        }
+
         public void Execute(HttpContext context, IAuthenticationManager authManager)
         {
+            AuthenticationConfiguration authConfig = Operation.AuthConfigs[this.GetType()];
+
+            if(authConfig == null)
+            {
+                this.logger?.Log(EventType.OperationAuthenticationError, "Unable to find authentication configuration for '{0}'.", this.Name);
+
+                context.Response.SetDefaultValues();
+                context.Response.StatusCode = 500;
+                context.Response.WriteContent("Oooops.");
+
+                return;
+            }
+
+            this.logger?.Log(EventType.OperationAuthentication, "Authentication configuration: '{0}'.", JsonConvert.SerializeObject(authConfig));
+
+
+            // Check for https, if configured
+
+            if (authConfig.HttpsOnly)
+            {
+                if (!context.Request.IsSecureConnection)
+                {
+                    this.logger?.Log(EventType.OperationAuthenticationError, "'HttpsOnly' is set for operation '{0}' but connection to client is 'http'.", this.Name);
+
+                    context.Response.SetDefaultValues();
+                    context.Response.StatusCode = 403;
+                    context.Response.WriteContent("Operation is available via https only.");
+
+                    return;
+                }
+            }
+
+            // check authentication, if configured
+
+            if (authConfig.AuthenticationRequired)
+            {
+
+                // First check in cookies
+                string accessToken = context.Request.Cookies[Operation.AccessTokenName]?.Value;
+
+                // Check in headers
+                if (string.IsNullOrEmpty(accessToken))
+                {
+                    accessToken = context.Request.Headers[Operation.AccessTokenName];
+                }
+
+                // check in query
+                if (string.IsNullOrEmpty(accessToken))
+                {
+                    var parameters = System.Web.HttpUtility.ParseQueryString(System.Web.HttpUtility.UrlDecode(context.Request.Url.Query));
+                    accessToken = parameters[Operation.AccessTokenName];
+                }
+
+                this.logger?.Log(EventType.OperationAuthentication, "Found accesstoken: {0}.", string.IsNullOrEmpty(accessToken) ? "false" : "true");
+
+                if (!authManager.IsValidAccessToken(accessToken))
+                {
+                    this.logger?.Log(EventType.OperationAuthenticationError, "No valid access token passed.");
+
+                    context.Response.SetDefaultValues();
+                    context.Response.StatusCode = 403;
+                    context.Response.WriteContent("Authentication required! Please authenticate at '/auth?username={USERNAME}&key={KEY}'.");
+
+                    return;
+                }
+
+                this.logger?.Log(EventType.OperationAuthentication, "Authentication was successful.");
+            }
+
             try
             {
                 this.ExecuteInternal(context, authManager);
@@ -62,8 +153,23 @@ namespace Batzill.Server.Core
         /// </summary>
         /// <param name="logger">The logger instance.</param>
         /// <param name="settings">The settings.</param>
-        public virtual void InitializeClass(OperationSettings settings, IAuthenticationManager authManager) { }
-        public abstract bool Match(HttpContext context);
+        protected virtual void InitializeClassInternal(OperationSettings settings, IAuthenticationManager authManager) { }
+
         protected abstract void ExecuteInternal(HttpContext context, IAuthenticationManager authManager);
+
+        public abstract bool Match(HttpContext context);
+
+        private class AuthenticationConfiguration
+        {
+            public bool AuthenticationRequired
+            {
+                get; set;
+            }
+
+            public bool HttpsOnly
+            {
+                get; set;
+            }
+        }
     }
 }

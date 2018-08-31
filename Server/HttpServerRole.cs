@@ -42,7 +42,7 @@ namespace Batzill.Server
         {
             List<ILogWriter> logWriter = new List<ILogWriter>();
 
-            foreach(LogWriterSettings lws in HttpServerRole.settingsProvider.Settings.LogWriters)
+            foreach(LogWriterSettings lws in HttpServerRole.settingsProvider.Settings.Loggers)
             {
                 switch(lws.Name)
                 {

@@ -18,7 +18,7 @@ namespace Batzill.Server.Core.Settings
         }
 
         [JsonProperty(Required = Required.Always)]
-        public List<LogWriterSettings> LogWriters
+        public List<LogWriterSettings> Loggers
         {
             get; set;
         }
@@ -38,12 +38,12 @@ namespace Batzill.Server.Core.Settings
 
             this.Core.Validate();
 
-            if (this.LogWriters == null)
+            if (this.Loggers == null)
             {
-                throw new NullReferenceException($"'{nameof(this.LogWriters)}' has to be specified.");
+                throw new NullReferenceException($"'{nameof(this.Loggers)}' has to be specified.");
             }
 
-            this.LogWriters.ForEach((lw) => lw.Validate());
+            this.Loggers.ForEach((lw) => lw.Validate());
 
             if (this.Operations == null)
             {

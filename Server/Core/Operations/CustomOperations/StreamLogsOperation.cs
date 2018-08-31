@@ -11,7 +11,7 @@ using Batzill.Server.Core.Authentication;
 
 namespace Batzill.Server.Core.Operations
 {
-    public class StreamLogsOperation : AuthenticationRequiredOperation
+    public class StreamLogsOperation : Operation
     {
         private const string InputParameterClient = "client";
         private const string InputParameterPort = "port";
@@ -29,7 +29,7 @@ namespace Batzill.Server.Core.Operations
         {
         }
 
-        protected override void ExecuteAfterAuthentication(HttpContext context, IAuthenticationManager authManager)
+        protected override void ExecuteInternal(HttpContext context, IAuthenticationManager authManager)
         {
             if (!(this.logger?.LogWriter is MultiLogWriter))
             {

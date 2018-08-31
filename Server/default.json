@@ -18,11 +18,10 @@
     "HttpKeepAlive": true
   },
   "Authentication": {
-    "HttpsOnly": true,
     "SessionRefresh": true,
     "SessionDuration": 1
   },
-  "LogWriters": [
+  "Loggers": [
     {
       "Name": "Console"
     },
@@ -77,9 +76,9 @@
     {
       "Name": "ClientLogin",
       "Priority": 2,
-      "HttpsOnly": true,
       "WhiteList": [
-        "127.0.0.1"
+        "127.0.0.1",
+        "::1"
       ]
     },
     {
@@ -106,7 +105,8 @@
     },
     {
       "Name": "StatusCode",
-      "Priority": 1
+      "Priority": 1,
+      "HttpsOnly":  true
     },
     {
       "Name": "StreamLogs",

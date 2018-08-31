@@ -18,16 +18,6 @@ namespace Batzill.Server.Core.Settings
                 this.sessionDuration = value;
             }
         }
-        
-        private bool httpsOnly = true;
-        public bool HttpsOnly
-        {
-            get => this.httpsOnly;
-            set
-            {
-                this.httpsOnly = value;
-            }
-        }
 
         private bool sessionRefresh = false;
         public bool SessionRefresh

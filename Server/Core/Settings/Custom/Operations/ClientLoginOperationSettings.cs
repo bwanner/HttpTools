@@ -13,19 +13,14 @@ namespace Batzill.Server.Core.Settings.Custom.Operations
             get; set;
         }
 
-        private bool httpsOnly = true;
-        public bool HttpsOnly
-        {
-            get => this.httpsOnly;
-            set
-            {
-                this.httpsOnly = value;
-            }
-        }
-
         public override void Validate()
         {
-            if(this.WhiteList != null)
+            if (this.AuthenticationRequired)
+            {
+                throw new ArgumentException($"'{nameof(this.AuthenticationRequired)}' is not allowed for '{this.Name}'.");
+            }
+
+            if (this.WhiteList != null)
             {
                 if(this.WhiteList.Any(string.IsNullOrEmpty))
                 {

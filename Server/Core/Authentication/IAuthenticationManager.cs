@@ -8,8 +8,6 @@ namespace Batzill.Server.Core.Authentication
 {
     public interface IAuthenticationManager
     {
-        bool HttpsOnly { get; }
-
         void AddUser(string userId);
 
         (string, DateTime) GetAccessToken(string userId, bool tryRefreshExistingSession = false);
