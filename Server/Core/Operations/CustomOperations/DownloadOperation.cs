@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using Batzill.Server.Core.Authentication;
+using Batzill.Server.Core.Exceptions;
 using Batzill.Server.Core.Logging;
 using Batzill.Server.Core.ObjectModel;
 
@@ -57,16 +58,15 @@ namespace Batzill.Server.Core.Operations
                             break;
                         default:
                             this.logger?.Log(EventType.OperationError, "Unknown size unit '{0}'", requestedUnit);
-                            context.Response.WriteContent(string.Format("Unknown size unit '{0}'", requestedUnit));
-                            return;
 
+                            throw new BadRequestException("Unknown size unit '{0}'", requestedUnit);
                     }
 
                     if (requestedDownloadSize > 34359738368) // = 32g
                     {
                         this.logger?.Log(EventType.OperationError, "File is to big '{0}'{1}, only supported up to 32GB.", inputNumber, requestedUnit);
-                        context.Response.WriteContent(string.Format("File is to big '{0}'{1}, only supported up to 32GB.", inputNumber, requestedUnit));
-                        return;
+
+                        throw new BadRequestException("File is to big '{0}'{1}, only supported up to 32GB.", inputNumber, requestedUnit);
                     }
 
                     /* Parse input parameters in query */
@@ -78,9 +78,8 @@ namespace Batzill.Server.Core.Operations
                         if(!Int32.TryParse(parameters["bufferSize"], out bufferSize) || bufferSize < 1 || bufferSize > 33554432)
                         {
                             this.logger?.Log(EventType.OperationError, "Unable to parse chunk size '{0}' to long.", parameters["bufferSize"]);
-                            context.Response.WriteContent(string.Format("Unable to parse chunk size '{0}' to long.  Please provide the chunk size in number of bytes within [1, 32MB]", parameters["bufferSize"]));
 
-                            return;
+                            throw new BadRequestException("Unable to parse chunk size '{0}' to long.  Please provide the chunk size in number of bytes within [1, 32MB]", parameters["bufferSize"]);
                         }
                     }
 
@@ -90,9 +89,8 @@ namespace Batzill.Server.Core.Operations
                         if (!Int32.TryParse(parameters["wait"], out waitTime) || waitTime < 1 || waitTime > 30000)
                         {
                             this.logger?.Log(EventType.OperationError, "Invalid value for wait time: '{0}'.", parameters["wait"]);
-                            context.Response.WriteContent(string.Format("Invalid value for wait time: '{0}'. Please provide a value in ms within [1, 30000].", parameters["wait"]));
 
-                            return;
+                            throw new BadRequestException("Invalid value for wait time: '{0}'. Please provide a value in ms within [1, 30000].", parameters["wait"]);
                         }
                     }
 
@@ -132,7 +130,8 @@ namespace Batzill.Server.Core.Operations
                 else
                 {
                     this.logger?.Log(EventType.OperationError, "Unable to parse '{0}' to long.", result.Groups[1].Value);
-                    context.Response.WriteContent(string.Format("Unable to parse '{0}' to long.", result.Groups[1].Value));
+
+                    throw new BadRequestException("Unable to parse '{0}' to long.", result.Groups[1].Value);
                 }
             }
             else

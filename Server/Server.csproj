@@ -65,6 +65,11 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Core\Authentication\IAuthenticationManager.cs" />
+    <Compile Include="Core\Exceptions\NotFoundException.cs" />
+    <Compile Include="Core\Exceptions\InternalServerErrorException.cs" />
+    <Compile Include="Core\Exceptions\AuthenticationException.cs" />
+    <Compile Include="Core\Exceptions\OperationException.cs" />
+    <Compile Include="Core\Exceptions\BadRequestException.cs" />
     <Compile Include="Core\IO\IFileReader.cs" />
     <Compile Include="Core\IO\IFileWriter.cs" />
     <Compile Include="Core\IO\SystemFileWriter.cs" />

@@ -2,6 +2,7 @@
 using System.Text.RegularExpressions;
 using System.Threading;
 using Batzill.Server.Core.Authentication;
+using Batzill.Server.Core.Exceptions;
 using Batzill.Server.Core.Logging;
 using Batzill.Server.Core.ObjectModel;
 using Batzill.Server.Core.Settings;
@@ -42,7 +43,7 @@ namespace Batzill.Server.Core.Operations
                 {
                     this.logger?.Log(EventType.OperationInformation, "Unable to parse '{0}' to an integer.", result.Groups[1].Value);
 
-                    context.Response.WriteContent(string.Format("Unable to parse '{0}' to an integer.", result.Groups[1].Value));
+                    throw new BadRequestException("Unable to parse '{0}' to an integer.", result.Groups[1].Value);
                 }
             }
             else

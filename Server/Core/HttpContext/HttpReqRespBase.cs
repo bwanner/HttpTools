@@ -73,6 +73,21 @@ namespace Batzill.Server.Core.ObjectModel
             this.ContentType = "text/html";
         }
 
+        public virtual void Reset()
+        {
+            // set default values
+            this.SetDefaultValues();
+
+            // reset whatever gets initialized at the beginning
+            this.Cookies = new CookieCollection();
+            this.Headers = new NameValueCollection();
+            this.Stream = new MemoryStream();
+
+            // reset the rest
+            this.SendChuncked = false;
+            this.KeepAlive = false;
+        }
+
         public string GetHeaderValue(string header, string def = null)
         {
             if (string.IsNullOrEmpty(header))

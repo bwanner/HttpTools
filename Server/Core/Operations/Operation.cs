@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using Batzill.Server.Core.Authentication;
+using Batzill.Server.Core.Exceptions;
 using Batzill.Server.Core.Logging;
 using Batzill.Server.Core.ObjectModel;
 using Batzill.Server.Core.Settings;
@@ -73,11 +74,7 @@ namespace Batzill.Server.Core
             {
                 this.logger?.Log(EventType.OperationAuthenticationError, "Unable to find authentication configuration for '{0}'.", this.Name);
 
-                context.Response.SetDefaultValues();
-                context.Response.StatusCode = 500;
-                context.Response.WriteContent("Oooops.");
-
-                return;
+                throw new InternalServerErrorException("Unlucky.");
             }
 
             this.logger?.Log(EventType.OperationAuthentication, "Authentication configuration: '{0}'.", JsonConvert.SerializeObject(authConfig));
@@ -91,11 +88,7 @@ namespace Batzill.Server.Core
                 {
                     this.logger?.Log(EventType.OperationAuthenticationError, "'HttpsOnly' is set for operation '{0}' but connection to client is 'http'.", this.Name);
 
-                    context.Response.SetDefaultValues();
-                    context.Response.StatusCode = 403;
-                    context.Response.WriteContent("Operation is available via https only.");
-
-                    return;
+                    throw new AuthenticationException("Operation is available via https only.");
                 }
             }
 
@@ -126,11 +119,7 @@ namespace Batzill.Server.Core
                 {
                     this.logger?.Log(EventType.OperationAuthenticationError, "No valid access token passed.");
 
-                    context.Response.SetDefaultValues();
-                    context.Response.StatusCode = 403;
-                    context.Response.WriteContent("Authentication required! Please authenticate at '/auth?username={USERNAME}&key={KEY}'.");
-
-                    return;
+                    throw new AuthenticationException("Authentication required! Please authenticate at '/auth?username={USERNAME}&key={KEY}'.");
                 }
 
                 this.logger?.Log(EventType.OperationAuthentication, "Authentication was successful.");

@@ -75,6 +75,16 @@ namespace Batzill.Server.Core.ObjectModel
             this.CloseResponseInternal();
         }
 
+        public void ResetResponse()
+        {
+            if (!this.SyncAllowed)
+            {
+                throw new InvalidOperationException("Not allowed to reset response, either Flush or Close was already invoked.");
+            }
+
+            this.Response.Reset();
+        }
+
         public void SyncRequest()
         {
             if (!this.SyncAllowed)
@@ -101,6 +111,16 @@ namespace Batzill.Server.Core.ObjectModel
             this.SyncAllowed = false;
             this.FlushAllowed = false;
             this.CloseRequestInternal();
+        }
+
+        public void ResetRequest()
+        {
+            if(!this.SyncAllowed)
+            {
+                throw new InvalidOperationException("Not allowed to reset request, either Flush or Close was already invoked.");
+            }
+
+            this.Request.Reset();
         }
 
         protected abstract void SyncResponseInternal();

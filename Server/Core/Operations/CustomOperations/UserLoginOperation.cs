@@ -6,9 +6,8 @@ using System.Text.RegularExpressions;
 using Batzill.Server.Core.Settings.Custom.Operations;
 using Newtonsoft.Json;
 using Batzill.Server.Core.Authentication;
+using Batzill.Server.Core.Exceptions;
 using System.Collections.Concurrent;
-using System.Security.Cryptography;
-using System.Text;
 
 namespace Batzill.Server.Core.Operations
 {
@@ -54,7 +53,7 @@ namespace Batzill.Server.Core.Operations
 
             // Create response content
 
-            this.logger?.Log(EventType.OperationInformation, "Parsing Authentication Details.");
+            this.logger?.Log(EventType.OperationAuthentication, "Parsing Authentication Details.");
 
             var parameters = System.Web.HttpUtility.ParseQueryString(System.Web.HttpUtility.UrlDecode(context.Request.Url.Query));
 
@@ -63,11 +62,12 @@ namespace Batzill.Server.Core.Operations
 
             if (string.IsNullOrEmpty(userName) || string.IsNullOrEmpty(key))
             {
-                context.Response.WriteContent("Please provide 'username' and 'key'.");
-                return;
+                this.logger?.Log(EventType.OperationAuthenticationError, "Username or key is not provided.");
+
+                throw new AuthenticationException("Please provide 'username' and 'key'.");
             }
 
-            this.logger?.Log(EventType.OperationInformation, "Verifying credentials.");
+            this.logger?.Log(EventType.OperationAuthentication, "Verifying credentials.");
 
             string userId = null;
             string keyHash = Utils.GenerateKeyHash(key);
@@ -78,11 +78,9 @@ namespace Batzill.Server.Core.Operations
                 {
                     if(!string.Equals(creds.KeyHash, keyHash, StringComparison.InvariantCultureIgnoreCase))
                     {
-                        this.logger?.Log(EventType.OperationError, "Invalid password provided.");
+                        this.logger?.Log(EventType.OperationAuthenticationError, "Invalid password provided.");
 
-                        context.Response.StatusCode = 403;
-                        context.Response.WriteContent("Username or password invalid.");
-                        return;
+                        throw new AuthenticationException("Username or password invalid.");
                     }
 
                     userId = UserLoginOperation.GetUserId(creds);
@@ -92,14 +90,12 @@ namespace Batzill.Server.Core.Operations
 
             if (string.IsNullOrEmpty(userId))
             {
-                this.logger?.Log(EventType.OperationError, "User '{0}' wasn't found.", userName);
+                this.logger?.Log(EventType.OperationAuthenticationError, "User '{0}' wasn't found.", userName);
 
-                context.Response.StatusCode = 403;
-                context.Response.WriteContent("Username or password invalid.");
-                return;
+                throw new AuthenticationException("Username or password invalid.");
             }
 
-            this.logger?.Log(EventType.OperationInformation, "Get access token.");
+            this.logger?.Log(EventType.OperationAuthentication, "Get access token.");
 
             string accessToken = null;
             DateTime expirationDate = new DateTime();
@@ -109,15 +105,12 @@ namespace Batzill.Server.Core.Operations
             }
             catch(Exception ex)
             {
-                this.logger?.Log(EventType.OperationError, "Exception occured while trying to get access token for user '{0}': '{1}'.", userName, ex);
+                this.logger?.Log(EventType.OperationAuthenticationError, "Exception occured while trying to get access token for user '{0}': '{1}'.", userName, ex);
 
-                context.Response.StatusCode = 403;
-                context.Response.WriteContent("Username or password invalid.");
-
-                return;
+                throw new AuthenticationException("Username or password invalid.");
             }
 
-            this.logger?.Log(EventType.OperationInformation, "Authentication was successful, returning access token.");
+            this.logger?.Log(EventType.OperationAuthentication, "Authentication was successful, returning access token.");
 
             context.Response.Cookies.Add(new System.Net.Cookie(Operation.AccessTokenName, accessToken)
             {

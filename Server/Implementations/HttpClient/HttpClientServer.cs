@@ -77,7 +77,6 @@ namespace Batzill.Server
 
             // Prepare Context
             HttpClientContext context = new HttpClientContext(httpListenerContext.Request, httpListenerContext.Response);
-            context.Response.KeepAlive = this.httpKeepAlive;
 
             this.HandleRequest(context);
         }
@@ -150,11 +149,6 @@ namespace Batzill.Server
             this.semaphore = new Semaphore(settings.Core.ConnectionLimit, settings.Core.ConnectionLimit);
 
             this.logger?.Log(EventType.ServerSetup, "Set ConnectionLimit to '{0}'.", settings.Core.ConnectionLimit);
-
-            /* HttpKeepAlive */
-            this.httpKeepAlive = settings.Core.HttpKeepAlive;
-
-            this.logger?.Log(EventType.ServerSetup, "Set HttpKeepAlive to '{0}'.", httpKeepAlive);
         }
 
         private static string GetApplicationId()

@@ -2,13 +2,11 @@
 using Batzill.Server.Core.Logging;
 using Batzill.Server.Core.ObjectModel;
 using Batzill.Server.Core.Settings;
+using Batzill.Server.Core.Exceptions;
 using System.Text.RegularExpressions;
 using Batzill.Server.Core.Settings.Custom.Operations;
-using Newtonsoft.Json;
 using Batzill.Server.Core.Authentication;
 using System.Collections.Concurrent;
-using System.Security.Cryptography;
-using System.Text;
 using System.Linq;
 
 namespace Batzill.Server.Core.Operations
@@ -54,19 +52,16 @@ namespace Batzill.Server.Core.Operations
 
             string client = context.Request.RemoteEndpoint.Address.ToString();
 
-            this.logger?.Log(EventType.OperationInformation, "Check whitelist for clientIp '{0}'.", client);
+            this.logger?.Log(EventType.OperationAuthentication, "Check whitelist for clientIp '{0}'.", client);
 
             if(!ClientLoginOperation.WhiteList.Any((wlClient) => String.Equals(client, wlClient, StringComparison.InvariantCultureIgnoreCase)))
             {
-                this.logger?.Log(EventType.OperationError, "Unknown client: '{0}'.", client);
+                this.logger?.Log(EventType.OperationAuthenticationError, "Unknown client: '{0}'.", client);
 
-                context.Response.StatusCode = 403;
-                context.Response.WriteContent("Unknown client.");
-
-                return;
+                throw new AuthenticationException("Unknown client.");
             }
 
-            this.logger?.Log(EventType.OperationInformation, "Found client '{0}' in whitelist.", client);
+            this.logger?.Log(EventType.OperationAuthentication, "Found client '{0}' in whitelist.", client);
 
             string accessToken = null;
             DateTime expirationDate = new DateTime();
@@ -76,15 +71,12 @@ namespace Batzill.Server.Core.Operations
             }
             catch(Exception ex)
             {
-                this.logger?.Log(EventType.OperationError, "Exception occured while trying to get access token for client '{0}': '{1}'.", client, ex);
+                this.logger?.Log(EventType.OperationAuthenticationError, "Exception occured while trying to get access token for client '{0}': '{1}'.", client, ex);
 
-                context.Response.StatusCode = 403;
-                context.Response.WriteContent("Unknown client.");
-
-                return;
+                throw new AuthenticationException("Unknown client.");
             }
 
-            this.logger?.Log(EventType.OperationInformation, "Authentication was successful, returning access token.");
+            this.logger?.Log(EventType.OperationAuthentication, "Authentication was successful, returning access token.");
 
             context.Response.Cookies.Add(new System.Net.Cookie(Operation.AccessTokenName, accessToken)
             {

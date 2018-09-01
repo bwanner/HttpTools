@@ -1,11 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Collections.Specialized;
-using System.IO;
-using System.Linq;
-using System.Net;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Batzill.Server.Core.ObjectModel
 {
@@ -43,6 +36,13 @@ namespace Batzill.Server.Core.ObjectModel
             this.StatusCode = 302;
             this.StatusDescription = "Redirect";
             this.RedirectLocation = url;
+        }
+
+        public override void Reset()
+        {
+            base.Reset();
+
+            this.RedirectLocation = null;
         }
     }
 }

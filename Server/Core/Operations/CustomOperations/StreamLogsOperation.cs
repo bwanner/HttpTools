@@ -8,6 +8,7 @@ using System.Threading;
 using Batzill.Server.Core.Settings;
 using Batzill.Server.Core.Settings.Custom.Operations;
 using Batzill.Server.Core.Authentication;
+using Batzill.Server.Core.Exceptions;
 
 namespace Batzill.Server.Core.Operations
 {
@@ -34,7 +35,8 @@ namespace Batzill.Server.Core.Operations
             if (!(this.logger?.LogWriter is MultiLogWriter))
             {
                 this.logger?.Log(EventType.OperationError, "Unable to attach EventLogWriter (Passed logwriter is no MultiLogWriter).");
-                return;
+
+                throw new InternalServerErrorException();
             }
 
             this.logger?.Log(EventType.OperationInformation, "Parse filter (if exist).");
@@ -95,7 +97,8 @@ namespace Batzill.Server.Core.Operations
                         break;
                     default:
                         this.logger?.Log(EventType.OperationError, "Unknown filter '{0}'.", parameter);
-                        break;
+
+                        throw new BadRequestException("Unknown filter '{0}'.", parameter);
                 }
             }
 

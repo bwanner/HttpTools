@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Text.RegularExpressions;
 using Batzill.Server.Core.Authentication;
+using Batzill.Server.Core.Exceptions;
 using Batzill.Server.Core.Logging;
 using Batzill.Server.Core.ObjectModel;
 using Batzill.Server.Core.Settings;
@@ -32,7 +33,8 @@ namespace Batzill.Server.Core.Operations
                     if (statusCode < 100 || statusCode > 999)
                     {
                         this.logger?.Log(EventType.OperationInformation, "Client passed invalid status code '{0}'.", statusCode);
-                        context.Response.WriteContent(string.Format("Invalid status code '{0}'.", statusCode));
+
+                        throw new BadRequestException("Invalid status code '{0}'.", statusCode);
                     }
                     else
                     {
@@ -43,7 +45,8 @@ namespace Batzill.Server.Core.Operations
                 else
                 {
                     this.logger?.Log(EventType.OperationInformation, "Unable to parse '{0}' to a status code.", result.Groups[1].Value);
-                    context.Response.WriteContent(string.Format("Unable to parse '{0}' to a status code.", result.Groups[1].Value));
+
+                    throw new BadRequestException("Unable to parse '{0}' to a status code.", result.Groups[1].Value);
                 }
             }
             else

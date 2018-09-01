@@ -1,4 +1,5 @@
 ﻿using Batzill.Server.Core.Authentication;
+using Batzill.Server.Core.Exceptions;
 using Batzill.Server.Core.Logging;
 using Batzill.Server.Core.ObjectModel;
 using Batzill.Server.Core.Settings;
@@ -161,15 +162,61 @@ namespace Batzill.Server.Core
                 context.Request.ProtocolVersion,
                 operationId);
 
+            /* 
+             * Inner try catches OperationException (might get rethrown)
+             * Outer try catches All.
+             * To avoid duplication in case it's not possible to set the response to the operationexception.
+             */
+
             try
             {
-                this.ProcessRequest(operationId, context);
+                this.ApplySettingsToRequest(context);
 
-                this.logger?.Log(EventType.SystemInformation, "Operation '{0}' finished successfully.", operationId);
+                try
+                {
+                    this.ProcessRequest(operationId, context);
+
+                    this.logger?.Log(EventType.SystemInformation, "Operation '{0}' finished successfully.", operationId);
+                }
+                catch (OperationException ex)
+                {
+                    this.logger?.Log(
+                        EventType.SystemError,
+                        "Operation '{0}' failed with an operation exception. StatusCode: '{1}', StatusDescription: '{2}', Message: '{3}'. Exception: '{4}'.",
+                        operationId,
+                        ex.StatusCode,
+                        ex.StatusDescription,
+                        ex.Message,
+                        ex);
+
+                    if (context.SyncAllowed)
+                    {
+                        context.Response.Reset();
+
+                        context.Response.StatusCode = ex.StatusCode;
+                        context.Response.StatusDescription = ex.StatusDescription;
+                        context.Response.WriteContent(ex.Message);
+
+                        this.ApplySettingsToRequest(context);
+                    }
+                    else
+                    {
+                        throw ex;
+                    }
+                }
             }
             catch (Exception ex)
             {
-                this.logger?.Log(EventType.SystemError, "Error executing operation '{0}': {1}", operationId, ex.Message);
+                this.logger?.Log(EventType.SystemError, "Error executing operation '{0}': {1}", operationId, ex);
+
+                context.Response.Reset();
+
+                context.Response.StatusCode = 500;
+                context.Response.StatusDescription = "Internal Server Error";
+                context.Response.WriteContent("500 - Internal Server Error occured.");
+
+                this.ApplySettingsToRequest(context);
+
             }
             finally
             {
@@ -191,9 +238,14 @@ namespace Batzill.Server.Core
                 }
                 catch (Exception ex)
                 {
-                    this.logger?.Log(EventType.SystemError, "Error finishing up operation '{0}': {1}", operationId, ex.Message);
+                    this.logger?.Log(EventType.SystemError, "Error finishing up operation '{0}': {1}", operationId, ex);
                 }
             }
+        }
+
+        private void ApplySettingsToRequest(HttpContext context)
+        {
+            context.Response.KeepAlive = this.settings.Core.HttpKeepAlive;
         }
 
         private void ProcessRequest(string operationId, HttpContext context)

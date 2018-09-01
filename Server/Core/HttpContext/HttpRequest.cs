@@ -91,5 +91,16 @@ namespace Batzill.Server.Core.ObjectModel
             HttpMethod = "GET";
             IsSecureConnection = false;
         }
+
+        public override void Reset()
+        {
+            base.Reset();
+
+            this.LocalEndpoint = null;
+            this.RemoteEndpoint = null;
+            this.Url = null;
+            this.UserAgent = null;
+            this.UserHostName = null;
+        }
     }
 }
