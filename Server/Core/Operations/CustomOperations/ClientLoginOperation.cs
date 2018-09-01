@@ -50,19 +50,6 @@ namespace Batzill.Server.Core.Operations
         {
             context.Response.SetDefaultValues();
 
-            // Check for https
-
-            this.logger?.Log(EventType.OperationInformation, $"Request protocol is '{context.Request.HttpMethod}'. Settings enforce https: '{ClientLoginOperation.HttpsOnly}'.");
-            if (ClientLoginOperation.HttpsOnly && !context.Request.IsSecureConnection)
-            {
-                this.logger?.Log(EventType.OperationError, "Authentication is only enabled for https while connection to client is http.");
-
-                context.Response.StatusCode = 403;
-                context.Response.WriteContent("Client login is only enabled for https.");
-
-                return;
-            }
-
             // Create response content
 
             string client = context.Request.RemoteEndpoint.Address.ToString();
