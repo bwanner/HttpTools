@@ -88,7 +88,7 @@ namespace Batzill.Server.Core
                 {
                     this.logger?.Log(EventType.OperationAuthenticationError, "'HttpsOnly' is set for operation '{0}' but connection to client is 'http'.", this.Name);
 
-                    throw new AuthenticationException("Operation is available via https only.");
+                    throw new UnauthorizedException("Operation is available via https only.");
                 }
             }
 
@@ -119,7 +119,7 @@ namespace Batzill.Server.Core
                 {
                     this.logger?.Log(EventType.OperationAuthenticationError, "No valid access token passed.");
 
-                    throw new AuthenticationException("Authentication required! Please authenticate at '/auth?username={USERNAME}&key={KEY}'.");
+                    throw new UnauthorizedException("Authentication required! Please authenticate at '/auth?username={USERNAME}&key={KEY}'.");
                 }
 
                 this.logger?.Log(EventType.OperationAuthentication, "Authentication was successful.");

@@ -58,7 +58,7 @@ namespace Batzill.Server.Core.Operations
             {
                 this.logger?.Log(EventType.OperationAuthenticationError, "Unknown client: '{0}'.", client);
 
-                throw new AuthenticationException("Unknown client.");
+                throw new UnauthorizedException("Unknown client.");
             }
 
             this.logger?.Log(EventType.OperationAuthentication, "Found client '{0}' in whitelist.", client);
@@ -73,7 +73,7 @@ namespace Batzill.Server.Core.Operations
             {
                 this.logger?.Log(EventType.OperationAuthenticationError, "Exception occured while trying to get access token for client '{0}': '{1}'.", client, ex);
 
-                throw new AuthenticationException("Unknown client.");
+                throw new UnauthorizedException("Unknown client.");
             }
 
             this.logger?.Log(EventType.OperationAuthentication, "Authentication was successful, returning access token.");

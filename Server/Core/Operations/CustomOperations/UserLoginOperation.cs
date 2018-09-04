@@ -64,7 +64,7 @@ namespace Batzill.Server.Core.Operations
             {
                 this.logger?.Log(EventType.OperationAuthenticationError, "Username or key is not provided.");
 
-                throw new AuthenticationException("Please provide 'username' and 'key'.");
+                throw new UnauthorizedException("Please provide 'username' and 'key'.");
             }
 
             this.logger?.Log(EventType.OperationAuthentication, "Verifying credentials.");
@@ -80,7 +80,7 @@ namespace Batzill.Server.Core.Operations
                     {
                         this.logger?.Log(EventType.OperationAuthenticationError, "Invalid password provided.");
 
-                        throw new AuthenticationException("Username or password invalid.");
+                        throw new UnauthorizedException("Username or password invalid.");
                     }
 
                     userId = UserLoginOperation.GetUserId(creds);
@@ -92,7 +92,7 @@ namespace Batzill.Server.Core.Operations
             {
                 this.logger?.Log(EventType.OperationAuthenticationError, "User '{0}' wasn't found.", userName);
 
-                throw new AuthenticationException("Username or password invalid.");
+                throw new UnauthorizedException("Username or password invalid.");
             }
 
             this.logger?.Log(EventType.OperationAuthentication, "Get access token.");
@@ -107,7 +107,7 @@ namespace Batzill.Server.Core.Operations
             {
                 this.logger?.Log(EventType.OperationAuthenticationError, "Exception occured while trying to get access token for user '{0}': '{1}'.", userName, ex);
 
-                throw new AuthenticationException("Username or password invalid.");
+                throw new UnauthorizedException("Username or password invalid.");
             }
 
             this.logger?.Log(EventType.OperationAuthentication, "Authentication was successful, returning access token.");
