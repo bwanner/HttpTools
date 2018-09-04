@@ -19,7 +19,12 @@
   },
   "Authentication": {
     "SessionRefresh": true,
-    "SessionDuration": 1
+    "SessionDuration": 1,
+    "Users": [
+      {
+        "Id":  "jobatzil"
+      }
+    ]
   },
   "Loggers": [
     {
@@ -68,6 +73,7 @@
       "HttpsOnly": true,
       "Credentials": [
         {
+          "UserId": "jobatzil",
           "UserName": "jobatzil",
           "KeyHash": "9d7b44deffd5fcfa20b036a4cf1d2cad"
         }
@@ -76,9 +82,14 @@
     {
       "Name": "ClientLogin",
       "Priority": 2,
-      "WhiteList": [
-        "127.0.0.1",
-        "::1"
+      "Clients": [
+        {
+          "UserId": "jobatzil",
+          "Addresses": [
+            "127.0.0.1",
+            "::1"
+          ]
+        }
       ]
     },
     {

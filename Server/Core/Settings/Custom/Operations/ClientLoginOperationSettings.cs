@@ -8,7 +8,7 @@ namespace Batzill.Server.Core.Settings.Custom.Operations
 {
     public class ClientLoginOperationSettings : OperationSettings
     {
-        public List<string> WhiteList
+        public List<ClientLoginOperation.Client> Clients
         {
             get; set;
         }
@@ -20,12 +20,9 @@ namespace Batzill.Server.Core.Settings.Custom.Operations
                 throw new ArgumentException($"'{nameof(this.AuthenticationRequired)}' is not allowed for '{this.Name}'.");
             }
 
-            if (this.WhiteList != null)
+            if (this.Clients != null)
             {
-                if(this.WhiteList.Any(string.IsNullOrEmpty))
-                {
-                    throw new NullReferenceException("Empty white list entry is not supported.");
-                }
+                this.Clients.ForEach((c) => c.Validate());
             }
         }
     }

@@ -18,12 +18,20 @@ namespace Batzill.Server.Core.Authentication
 
         public AuthenticationManager(HttpServerSettings settings)
         {
-            this.sessionValidityInMinutes = settings.Authentication.SessionDuration;
-            this.SessionRefreshAllowed = settings.Authentication.SessionRefresh;
-
             this.users = new ConcurrentBag<User>();
             this.userIdMapping = new ConcurrentDictionary<string, User>(StringComparer.InvariantCultureIgnoreCase);
             this.accessTokenMapping = new ConcurrentDictionary<string, User>(StringComparer.InvariantCultureIgnoreCase);
+
+            this.sessionValidityInMinutes = settings.Authentication.SessionDuration;
+            this.SessionRefreshAllowed = settings.Authentication.SessionRefresh;
+
+            if (settings.Authentication.Users != null)
+            {
+                foreach (User user in settings.Authentication.Users)
+                {
+                    this.AddUser(user.Id);
+                }
+            }
         }
 
         public void AddUser(string userId)
@@ -104,6 +112,16 @@ namespace Batzill.Server.Core.Authentication
             }
 
             return this.accessTokenMapping[accessToken]?.Id;
+        }
+        
+        public bool UserExists(string userId)
+        {
+            if (string.IsNullOrEmpty(userId))
+            {
+                return false;
+            }
+
+            return this.userIdMapping.Keys.Contains(userId);
         }
 
         public bool IsValidAccessToken(string accessToken)

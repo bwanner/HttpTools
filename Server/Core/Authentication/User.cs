@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Newtonsoft.Json;
+using System;
 
 namespace Batzill.Server.Core.Authentication
 {
@@ -13,9 +10,18 @@ namespace Batzill.Server.Core.Authentication
             get; set;
         }
 
+        [JsonIgnore]
         public Session Session
         {
             get; set;
+        }
+
+        public void Validate()
+        {
+            if(string.IsNullOrEmpty(Id))
+            {
+                throw new NullReferenceException($"'{nameof(this.Id)}' can't be null or empty!");
+            }
         }
     }
 }

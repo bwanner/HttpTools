@@ -37,10 +37,15 @@ namespace Batzill.Server.Core.Operations
             UserLoginOperation.Creds = new ConcurrentBag<Credentials>();
             foreach(Credentials creds in internalSettings.Credentials)
             {
-                this.logger?.Log(EventType.OperationClassInitalization, "Adding user '{0}'.", creds.UserName);
+                if(!authManager.UserExists(creds.UserId))
+                {
+                    this.logger?.Log(EventType.OperationClassInitalization, "User '{0}' isn't known.", creds.UserId);
+                    continue;
+                }
+
+                this.logger?.Log(EventType.OperationClassInitalization, "Adding credentials for user '{0}'.", creds.UserId);
 
                 UserLoginOperation.Creds.Add(creds);
-                authManager.AddUser(UserLoginOperation.GetUserId(creds));
             }
 
             UserLoginOperation.HttpsOnly = internalSettings.HttpsOnly;
@@ -83,7 +88,7 @@ namespace Batzill.Server.Core.Operations
                         throw new UnauthorizedException("Username or password invalid.");
                     }
 
-                    userId = UserLoginOperation.GetUserId(creds);
+                    userId = creds.UserId;
                     break;
                 }
             }
@@ -123,18 +128,24 @@ namespace Batzill.Server.Core.Operations
             return;
         }
 
-        private static string GetUserId(Credentials creds)
-        {
-            return Utils.CalculateMD5Hash(creds.UserName.ToLowerInvariant());
-        }
-
         public override bool Match(HttpContext context)
         {
             return Regex.IsMatch(context.Request.Url.AbsolutePath, @"^/auth/user$", RegexOptions.IgnoreCase);
         }
 
+        private static string GetUserId(string userName)
+        {
+            return Utils.CalculateMD5Hash(userName.ToLowerInvariant());
+        }
+
         public class Credentials
         {
+            [JsonProperty(Required = Required.Always)]
+            public string UserId
+            {
+                get; set;
+            }
+
             [JsonProperty(Required = Required.Always)]
             public string UserName
             {
@@ -149,6 +160,11 @@ namespace Batzill.Server.Core.Operations
 
             public void Validate()
             {
+                if (string.IsNullOrEmpty(this.UserId))
+                {
+                    throw new NullReferenceException($"'{nameof(this.UserId)}' can't be null or empty!");
+                }
+
                 if (string.IsNullOrEmpty(this.UserName))
                 {
                     throw new NullReferenceException($"'{nameof(this.UserName)}' can't be null or empty!");
