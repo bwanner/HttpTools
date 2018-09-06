@@ -13,13 +13,13 @@
         "CertificateThumbPrint": "f470bb367af86a64e14dedf4fd77c47f210756b4"
       }
     ],
-    "IdleTimeout": 22,
-    "ConnectionLimit": 2222,
+    "IdleTimeout": 300,
+    "ConnectionLimit": 5000,
     "HttpKeepAlive": true
   },
   "Authentication": {
     "SessionRefresh": true,
-    "SessionDuration": 1,
+    "SessionDuration": 120,
     "Users": [
       {
         "Id":  "jobatzil"
