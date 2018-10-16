@@ -2,17 +2,16 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Collections.Concurrent;
+using System.Web;
+using System.IO;
+using Batzill.Server.Core.Authentication;
 using Batzill.Server.Core.Logging;
 using Batzill.Server.Core.Settings;
 using Batzill.Server.Core.Settings.Custom.Operations;
-using System.Collections.Concurrent;
-using System.Web;
+using Batzill.Server.Core.Exceptions;
 using HttpContext = Batzill.Server.Core.ObjectModel.HttpContext;
 using Newtonsoft.Json;
-using Batzill.Server.Core.Authentication;
-using System.Linq;
-using System.IO;
-using Batzill.Server.Core.Exceptions;
 
 namespace Batzill.Server.Core.Operations
 {

@@ -4,8 +4,6 @@ using Batzill.Server.Core.Authentication;
 using Batzill.Server.Core.Exceptions;
 using Batzill.Server.Core.Logging;
 using Batzill.Server.Core.ObjectModel;
-using Batzill.Server.Core.Settings;
-using Batzill.Server.Core.Settings.Custom.Operations;
 
 namespace Batzill.Server.Core.Operations
 {

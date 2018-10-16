@@ -1,10 +1,10 @@
-﻿using Batzill.Server.Core.Authentication;
+﻿using System;
+using System.Threading.Tasks;
+using Batzill.Server.Core.Authentication;
 using Batzill.Server.Core.Exceptions;
 using Batzill.Server.Core.Logging;
 using Batzill.Server.Core.ObjectModel;
 using Batzill.Server.Core.Settings;
-using System;
-using System.Threading.Tasks;
 
 namespace Batzill.Server.Core
 {

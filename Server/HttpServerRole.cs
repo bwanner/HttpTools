@@ -1,13 +1,10 @@
-﻿using Batzill.Server.Core;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using Batzill.Server.Core;
 using Batzill.Server.Core.IO;
 using Batzill.Server.Core.Logging;
 using Batzill.Server.Core.Settings;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.IO;
 using Batzill.Server.Core.SSLBindingHelper;
 using Batzill.Server.Core.Settings.Custom.Operations;
 using Batzill.Server.Core.Authentication;

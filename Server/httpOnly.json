@@ -1,0 +1,130 @@
+﻿{
+  "Core": {
+    "EndPoints": [
+      {
+        "HostName": "localhost",
+        "Protocol": "HTTP",
+        "Port": 10000
+      }
+    ],
+    "IdleTimeout": 300,
+    "ConnectionLimit": 5000,
+    "HttpKeepAlive": true
+  },
+  "Authentication": {
+    "SessionRefresh": true,
+    "SessionDuration": 120,
+    "Users": [
+      {
+        "Id":  "jobatzil"
+      }
+    ]
+  },
+  "Loggers": [
+    {
+      "Name": "Console"
+    },
+    {
+      "Name": "File",
+      "LogFolder": "/tmp/whatever/httpServer/",
+      "FileName": "logfile.log"
+    },
+    {
+      "Name": "Operation",
+      "LogFolder": "/tmp/whatever/httpServer/operation"
+    }
+  ],
+  "Operations": [
+    {
+      "Name": "Dynamic",
+      "Priority": 2,
+      "Responses": [
+        {
+          "id": "abc",
+          "response": {
+            "StatusCode": 200,
+            "Headers": [
+              {
+                "Name": "headerName",
+                "Value": "headerValue"
+              }
+            ],
+            "Body": "whatever12324"
+          }
+        },
+        {
+          "id": "fqdn",
+          "response": {
+            "StatusCode": 200,
+            "Body": "jobatzil-vmmain.westus2.cloudapp.azure.com"
+          }
+        }
+      ]
+    },
+    {
+      "Name": "UserLogin",
+      "Priority": 2,
+      "HttpsOnly": true,
+      "Credentials": [
+        {
+          "UserId": "jobatzil",
+          "UserName": "jobatzil",
+          "KeyHash": "9d7b44deffd5fcfa20b036a4cf1d2cad"
+        }
+      ]
+    },
+    {
+      "Name": "ClientLogin",
+      "Priority": 2,
+      "Clients": [
+        {
+          "UserId": "jobatzil",
+          "Addresses": [
+            "127.0.0.1",
+            "::1"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Download",
+      "Priority": 1
+    },
+    {
+      "Name": "Machine",
+      "Priority": 1,
+      "AuthenticationRequired": true
+    },
+    {
+      "Name": "Id",
+      "Priority": 1,
+      "ServerId": "MyServerId"
+    },
+    {
+      "Name": "Redirect",
+      "Priority": 1
+    },
+    {
+      "Name": "SetCookie",
+      "Priority": 1
+    },
+    {
+      "Name": "StatusCode",
+      "Priority": 1,
+      "HttpsOnly":  true
+    },
+    {
+      "Name": "StreamLogs",
+      "Priority": 1,
+      "AuthenticationRequired": true
+    },
+    {
+      "Name": "Wait",
+      "Priority": 1
+    },
+    {
+      "Name": "Echo",
+      "Priority": 0
+    }
+  ]
+}

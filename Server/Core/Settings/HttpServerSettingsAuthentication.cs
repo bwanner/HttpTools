@@ -1,24 +1,13 @@
-﻿using Batzill.Server.Core.Authentication;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Batzill.Server.Core.Authentication;
 
 namespace Batzill.Server.Core.Settings
 {
     public class HttpServerSettingsAuthentication
     {
-
-        private int sessionDuration = 60;
-        public int SessionDuration
-        {
-            get => this.sessionDuration;
-            set
-            {
-                this.sessionDuration = value;
-            }
-        }
+        public int SessionDuration { get; set; } = 60;
 
         private bool sessionRefresh = false;
         public bool SessionRefresh

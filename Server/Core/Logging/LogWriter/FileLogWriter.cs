@@ -1,7 +1,6 @@
 ﻿using System;
 using System.IO;
 using Batzill.Server.Core.IO;
-using Batzill.Server.Core.Settings;
 using Batzill.Server.Core.Settings.Custom.Operations;
 
 namespace Batzill.Server.Core.Logging

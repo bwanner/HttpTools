@@ -1,11 +1,8 @@
-﻿using Batzill.Server.Core.Operations;
+﻿using System;
+using System.Collections.Generic;
+using Batzill.Server.Core.Operations;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Batzill.Server.Core.Settings.Custom.Operations
 {

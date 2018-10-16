@@ -1,6 +1,4 @@
-﻿using Batzill.Server.Core.Settings;
-
-namespace Batzill.Server.Core.Logging
+﻿namespace Batzill.Server.Core.Logging
 {
     public interface ILogWriter
     {

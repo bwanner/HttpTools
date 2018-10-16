@@ -1,11 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Batzill.Server.Core.Settings;
-
-namespace Batzill.Server.Core.Logging
+﻿namespace Batzill.Server.Core.Logging
 {
     public class AsyncLogWriter : ILogWriter
     {

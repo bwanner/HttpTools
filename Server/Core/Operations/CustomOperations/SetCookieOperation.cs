@@ -1,11 +1,9 @@
 ﻿using System;
 using System.Text;
-using Batzill.Server.Core.Logging;
-using Batzill.Server.Core.ObjectModel;
-using Batzill.Server.Core.Settings;
 using System.Text.RegularExpressions;
 using System.Collections.Specialized;
-using Batzill.Server.Core.Settings.Custom.Operations;
+using Batzill.Server.Core.Logging;
+using Batzill.Server.Core.ObjectModel;
 using Batzill.Server.Core.Authentication;
 
 namespace Batzill.Server.Core.Operations

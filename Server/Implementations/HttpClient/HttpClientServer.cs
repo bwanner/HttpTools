@@ -1,19 +1,17 @@
 ﻿using System;
-using Batzill.Server.Core.Settings;
-using System.Net;
-using Batzill.Server.Core.Logging;
-using System.Threading.Tasks;
-using Batzill.Server.Core.ObjectModel;
-using Batzill.Server.Core;
-using Batzill.Server.Implementations.HttpClient;
-using System.Text.RegularExpressions;
 using System.Collections.Generic;
-using Batzill.Server.Core.SSLBindingHelper;
-using System.Threading;
-using Newtonsoft.Json;
-using System.Runtime.InteropServices;
+using System.Net;
 using System.Reflection;
+using System.Runtime.InteropServices;
+using System.Threading;
+using System.Threading.Tasks;
+using Batzill.Server.Core;
 using Batzill.Server.Core.Authentication;
+using Batzill.Server.Core.Logging;
+using Batzill.Server.Core.Settings;
+using Batzill.Server.Core.SSLBindingHelper;
+using Batzill.Server.Implementations.HttpClient;
+using Newtonsoft.Json;
 
 namespace Batzill.Server
 {

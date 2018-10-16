@@ -1,161 +1,30 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{4FC1221C-5E3E-48BE-8E54-9D4DE2C7A207}</ProjectGuid>
     <OutputType>Exe</OutputType>
-    <RootNamespace>Batzill.Server</RootNamespace>
-    <AssemblyName>Batzill.Server</AssemblyName>
-    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
-    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
-    <PublishUrl>publish\</PublishUrl>
-    <Install>true</Install>
-    <InstallFrom>Disk</InstallFrom>
-    <UpdateEnabled>false</UpdateEnabled>
-    <UpdateMode>Foreground</UpdateMode>
-    <UpdateInterval>7</UpdateInterval>
-    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
-    <UpdatePeriodically>false</UpdatePeriodically>
-    <UpdateRequired>false</UpdateRequired>
-    <MapFileExtensions>true</MapFileExtensions>
-    <ApplicationRevision>0</ApplicationRevision>
-    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
-    <IsWebBootstrapper>false</IsWebBootstrapper>
-    <UseApplicationTrust>false</UseApplicationTrust>
-    <BootstrapperEnabled>true</BootstrapperEnabled>
+    <TargetFramework>netcoreapp2.1</TargetFramework>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
+
+  <PropertyGroup>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
+  
   <ItemGroup>
-    <Reference Include="Newtonsoft.Json, Version=11.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <HintPath>..\packages\Newtonsoft.Json.11.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
-    </Reference>
-    <Reference Include="System" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.ValueTuple, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.ValueTuple.4.5.0\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Web" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Net.Http" />
-    <Reference Include="System.Xml" />
+    <Folder Include="Properties\" />
   </ItemGroup>
+
   <ItemGroup>
-    <Compile Include="Core\Authentication\IAuthenticationManager.cs" />
-    <Compile Include="Core\Exceptions\NotFoundException.cs" />
-    <Compile Include="Core\Exceptions\InternalServerErrorException.cs" />
-    <Compile Include="Core\Exceptions\UnauthorizedException.cs" />
-    <Compile Include="Core\Exceptions\OperationException.cs" />
-    <Compile Include="Core\Exceptions\BadRequestException.cs" />
-    <Compile Include="Core\IO\IFileReader.cs" />
-    <Compile Include="Core\IO\IFileWriter.cs" />
-    <Compile Include="Core\IO\SystemFileWriter.cs" />
-    <Compile Include="Core\IO\SystemFileReader.cs" />
-    <Compile Include="Core\Logging\Logger\BasicLogger.cs" />
-    <Compile Include="Core\Logging\Logger\OperationLogger.cs" />
-    <Compile Include="Core\Logging\LogOperations\OperationLog.cs" />
-    <Compile Include="Core\Logging\LogWriter\AsyncLogWriter.cs" />
-    <Compile Include="Core\Logging\LogWriter\EventLogWriter.cs" />
-    <Compile Include="Core\Logging\LogWriter\ConsoleLogWriter.cs" />
-    <Compile Include="Core\Logging\EventType.cs" />
-    <Compile Include="Core\Logging\Logger.cs" />
-    <Compile Include="Core\Logging\Log.cs" />
-    <Compile Include="Core\Logging\ILogWriter.cs" />
-    <Compile Include="Core\Logging\LogWriter\FileLogWriter.cs" />
-    <Compile Include="Core\Logging\LogWriter\OperationLogWriter.cs" />
-    <Compile Include="Core\Logging\LogWriter\MultiLogWriter.cs" />
-    <Compile Include="Core\Authentication\AuthenticationManager.cs" />
-    <Compile Include="Core\Authentication\Session.cs" />
-    <Compile Include="Core\Authentication\User.cs" />
-    <Compile Include="Core\Operations\CustomOperations\DownloadOperation.cs" />
-    <Compile Include="Core\Operations\CustomOperations\ClientLoginOperation.cs" />
-    <Compile Include="Core\Operations\CustomOperations\UserLoginOperation.cs" />
-    <Compile Include="Core\Operations\CustomOperations\MachineDetailsOperaton.cs" />
-    <Compile Include="Core\Operations\CustomOperations\IdOperation.cs" />
-    <Compile Include="Core\Operations\CustomOperations\SetCookieOperation.cs" />
-    <Compile Include="Core\Operations\CustomOperations\DynamicOperation.cs" />
-    <Compile Include="Core\Settings\Custom\LogWriter\DefaultLogWriterSettings.cs" />
-    <Compile Include="Core\Settings\Custom\LogWriter\OperationLogWriterSettings.cs" />
-    <Compile Include="Core\Settings\Custom\LogWriter\FileLogWriterSettings.cs" />
-    <Compile Include="Core\Settings\Custom\LogWriter\LogWriterSettingsConverter.cs" />
-    <Compile Include="Core\Settings\Custom\Operations\ClientLoginOperationSettings.cs" />
-    <Compile Include="Core\Settings\Custom\Operations\UserLoginOperationSettings.cs" />
-    <Compile Include="Core\Settings\Custom\Operations\DynamicOperationSettings.cs" />
-    <Compile Include="Core\Settings\Custom\Operations\IdOperationSettings.cs" />
-    <Compile Include="Core\Settings\Custom\Operations\DefaultOperationSettings.cs" />
-    <Compile Include="Core\Settings\Custom\Operations\OperationSettingsConverter.cs" />
-    <Compile Include="Core\Settings\HttpServerSettingsAuthentication.cs" />
-    <Compile Include="Core\Settings\EndPoint.cs" />
-    <Compile Include="Core\Settings\HttpServerSettingsCore.cs" />
-    <Compile Include="Core\Settings\LogWriterSettings.cs" />
-    <Compile Include="Core\Settings\OperationSettings.cs" />
-    <Compile Include="Core\Settings\Protocol.cs" />
-    <Compile Include="Core\SSLBindingHelper\ISSLBindingHelper.cs" />
-    <Compile Include="Core\SSLBindingHelper\NetshWrapper.cs" />
-    <Compile Include="Core\HttpContext\HttpContext.cs" />
-    <Compile Include="Core\HttpContext\HttpReqRespBase.cs" />
-    <Compile Include="Core\HttpContext\HttpRequest.cs" />
-    <Compile Include="Core\HttpContext\HttpResponse.cs" />
-    <Compile Include="Core\Operations\CustomOperations\RedirectOperation.cs" />
-    <Compile Include="Core\Operations\CustomOperations\StatusCodeOperation.cs" />
-    <Compile Include="Core\Operations\CustomOperations\StreamLogsOperation.cs" />
-    <Compile Include="Core\Operations\CustomOperations\WaitOperation.cs" />
-    <Compile Include="Core\Operations\CustomOperations\EchoOperation.cs" />
-    <Compile Include="Core\Operations\IOperationFactory.cs" />
-    <Compile Include="Core\Operations\Operation.cs" />
-    <Compile Include="Core\Operations\AssemblyOperationFactory.cs" />
-    <Compile Include="Core\Operations\OperationPriorityComparer.cs" />
-    <Compile Include="Core\Settings\HttpServerSettings.cs" />
-    <Compile Include="Core\HttpServer.cs" />
-    <Compile Include="Core\Utils.cs" />
-    <Compile Include="Implementations\HttpClient\HttpClientContext.cs" />
-    <Compile Include="Implementations\HttpClient\HttpClientServer.cs" />
-    <Compile Include="Core\Settings\HttpServerSettingsProvider.cs" />
-    <Compile Include="HttpServerRole.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
+    <PackageReference Include="Microsoft.AspNetCore.Server.Kestrel" Version="2.1.3" />
+    <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
   </ItemGroup>
+
   <ItemGroup>
-    <None Include="App.config" />
-    <None Include="default.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    <None Update="httpOnly.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="KeyHashGeneration.ps1" />
-    <None Include="packages.config" />
+    <None Update="default.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
-  <ItemGroup>
-    <BootstrapperPackage Include=".NETFramework,Version=v4.5.2">
-      <Visible>False</Visible>
-      <ProductName>Microsoft .NET Framework 4.5.2 %28x86 and x64%29</ProductName>
-      <Install>true</Install>
-    </BootstrapperPackage>
-    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
-      <Visible>False</Visible>
-      <ProductName>.NET Framework 3.5 SP1</ProductName>
-      <Install>false</Install>
-    </BootstrapperPackage>
-  </ItemGroup>
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+
 </Project>

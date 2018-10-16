@@ -1,14 +1,13 @@
 ﻿using System;
+using System.Text.RegularExpressions;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
 using Batzill.Server.Core.Logging;
 using Batzill.Server.Core.ObjectModel;
 using Batzill.Server.Core.Settings;
 using Batzill.Server.Core.Exceptions;
-using System.Text.RegularExpressions;
 using Batzill.Server.Core.Settings.Custom.Operations;
 using Batzill.Server.Core.Authentication;
-using System.Collections.Concurrent;
-using System.Linq;
-using System.Collections.Generic;
 
 namespace Batzill.Server.Core.Operations
 {

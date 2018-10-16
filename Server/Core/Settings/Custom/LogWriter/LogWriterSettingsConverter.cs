@@ -1,8 +1,8 @@
-﻿using Batzill.Server.Core.Logging;
+﻿using System;
+using System.Collections.Generic;
+using Batzill.Server.Core.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using System;
-using System.Collections.Generic;
 
 namespace Batzill.Server.Core.Settings.Custom.Operations
 {

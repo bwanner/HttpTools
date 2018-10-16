@@ -2,11 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading;
 using Batzill.Server.Core.Logging;
 using Batzill.Server.Core.ObjectModel;
-using System.Threading;
-using Batzill.Server.Core.Settings;
-using Batzill.Server.Core.Settings.Custom.Operations;
 using Batzill.Server.Core.Authentication;
 using Batzill.Server.Core.Exceptions;
 

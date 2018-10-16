@@ -1,15 +1,11 @@
-﻿using Batzill.Server.Core.IO;
-using Batzill.Server.Core.Logging;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using System.Threading;
-using Newtonsoft.Json;
+using Batzill.Server.Core.IO;
+using Batzill.Server.Core.Logging;
 using Batzill.Server.Core.Settings.Custom.Operations;
+using Newtonsoft.Json;
 
 namespace Batzill.Server.Core.Settings
 {
@@ -37,7 +33,7 @@ namespace Batzill.Server.Core.Settings
             }
             if (!File.Exists(filePath))
             {
-                throw new ArgumentException("Please prive a valid settings file and make sure it exists!", "filePath");
+                throw new ArgumentException("Please provide a valid settings file and make sure it exists!", "filePath");
             }
 
             this.logger = logger;

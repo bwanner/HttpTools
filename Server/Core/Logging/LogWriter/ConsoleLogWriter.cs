@@ -1,5 +1,4 @@
 ﻿using System;
-using Batzill.Server.Core.Settings;
 
 namespace Batzill.Server.Core.Logging
 {
