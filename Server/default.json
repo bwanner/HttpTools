@@ -122,6 +122,7 @@
     {
       "Name": "StreamLogs",
       "Priority": 1,
+      "HttpsOnly": true,
       "AuthenticationRequired": true
     },
     {

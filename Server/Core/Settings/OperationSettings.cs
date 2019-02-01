@@ -16,26 +16,10 @@ namespace Batzill.Server.Core.Settings
         {
             get; private set;
         }
-
-        private bool authenticationRequired = false;
-        public bool AuthenticationRequired
-        {
-            get => this.authenticationRequired;
-            set
-            {
-                this.authenticationRequired = value;
-            }
-        }
-
-        private bool httpsOnly = false;
-        public bool HttpsOnly
-        {
-            get => this.httpsOnly;
-            set
-            {
-                this.httpsOnly = value;
-            }
-        }
+        
+        public bool AuthenticationRequired { get; set; }
+        
+        public bool HttpsOnly { get; set; }
 
         public virtual void Validate()
         {

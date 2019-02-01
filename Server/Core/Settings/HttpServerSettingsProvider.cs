@@ -1,31 +1,22 @@
 ﻿using Batzill.Server.Core.IO;
 using Batzill.Server.Core.Logging;
+using Batzill.Server.Core.Settings.Custom.Operations;
+
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
-using System.Threading;
 using Newtonsoft.Json;
-using Batzill.Server.Core.Settings.Custom.Operations;
-
 namespace Batzill.Server.Core.Settings
 {
     public class HttpServerSettingsProvider : IDisposable
     {
         // regex expressions
         public const string RegexSettingsEntry = @"^([a-zA-Z0-9\-\.]+)(\+?) (.+)$";
-
-        // To-DO enable dynamic reloading of settings ...
-        private event EventHandler<HttpServerSettings> SettingsChanged;
+        
         public HttpServerSettings Settings { get; private set; }
 
         private Logger logger;
         private IFileReader fileReader;
-        private FileSystemWatcher fileMonitor;
-        private bool monitorSettingsFile;
 
         private readonly string settingsFile;
 
@@ -43,7 +34,6 @@ namespace Batzill.Server.Core.Settings
             this.logger = logger;
             this.fileReader = fileReader;
             this.settingsFile = filePath;
-            this.monitorSettingsFile = false;
         }
 
         public void Dispose()
@@ -74,7 +64,7 @@ namespace Batzill.Server.Core.Settings
 
                         settings.Validate();
 
-                        this.ApplyNewSettings(settings);
+                        this.Settings = settings;
                     }
                 }
                 catch (Exception ex)
@@ -82,54 +72,6 @@ namespace Batzill.Server.Core.Settings
                     this.logger?.Log(EventType.SettingsParsingError, "Unable to load settings from file '{0}': {1}", this.settingsFile, ex.ToString());
                     throw new Exception("Unable to load settings file.");
                 }
-            }
-        }
-
-        private void ApplyNewSettings(HttpServerSettings settings)
-        {
-            lock (this)
-            {
-                this.logger?.Log(EventType.SystemSettings, "Apply new settings.");
-
-                this.Settings = settings;
-                
-                if (this.Settings.Core.MonitorSettingsFile)
-                {
-                    this.fileMonitor = new FileSystemWatcher(Path.GetDirectoryName(this.settingsFile));
-                    this.fileMonitor.Filter = Path.GetFileName(this.settingsFile);
-                    this.fileMonitor.NotifyFilter = NotifyFilters.LastWrite;
-                    this.fileMonitor.Changed += this.FileMonitor_Changed;
-                    this.fileMonitor.EnableRaisingEvents = true;
-                }
-                else if (fileMonitor != null)
-                {
-                    this.fileMonitor.EnableRaisingEvents = false;
-                    fileMonitor.Dispose();
-                }
-
-                this.logger?.Log(EventType.SystemSettings, "Invoke SettingsChanged event.");
-
-                if (this.SettingsChanged != null)
-                {
-                    this.SettingsChanged.Invoke(this, this.Settings);
-                }
-
-                this.logger?.Log(EventType.SystemSettings, "Applied new settings.");
-            }
-        }
-
-        private void FileMonitor_Changed(object sender, FileSystemEventArgs e)
-        {
-            this.logger?.Log(EventType.SystemSettings, "Setting file changes detected, reloading file!");
-            lock (this)
-            {
-                this.fileMonitor.EnableRaisingEvents = false;
-
-                this.LoadSettings();
-
-                Thread.Sleep(300);
-
-                this.fileMonitor.EnableRaisingEvents = true;
             }
         }
     }

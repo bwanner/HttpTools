@@ -1,12 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using Batzill.Server.Core.Authentication;
 using Batzill.Server.Core.Logging;
 using Batzill.Server.Core.ObjectModel;
-using Batzill.Server.Core.Settings;
-using Batzill.Server.Core.Settings.Custom.Operations;
+
 
 namespace Batzill.Server.Core.Operations
 {
@@ -24,12 +21,16 @@ namespace Batzill.Server.Core.Operations
 
             // Create response content
             StringBuilder ss = new StringBuilder();
+            
+            ss.AppendLine("REMOTE ENDPOINT INFORMATION:");
+            ss.AppendFormat("IP: '{0}'{1}", context.Request.RemoteEndpoint.Address, Environment.NewLine);
+            ss.AppendFormat("PORT: '{0}'{1}", context.Request.RemoteEndpoint.Port, Environment.NewLine);
+            ss.AppendLine();
 
-            ss.AppendLine("ENDPOINT INFORMATION:");
+            ss.AppendLine("LOCAL ENDPOINT INFORMATION:");
             ss.AppendFormat("IP: '{0}'{1}", context.Request.LocalEndpoint.Address, Environment.NewLine);
             ss.AppendFormat("PORT: '{0}'{1}", context.Request.LocalEndpoint.Port, Environment.NewLine);
             ss.AppendFormat("HOST: '{0}'{1}", context.Request.UserHostName, Environment.NewLine);
-
 
             if (context.Request.IsSecureConnection)
             {
